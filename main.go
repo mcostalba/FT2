@@ -1,27 +1,38 @@
 package main
 
 import (
+	"github.com/alexedwards/scs"
 	"html/template"
 	"net/http"
 )
 
 var templates = template.Must(template.ParseFiles("templ/dashboard.html"))
 
+// Initialize a new encrypted-cookie based session manager
+var SessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
+
 func handleDashboard(w http.ResponseWriter, r *http.Request) {
 
-	templates.ExecuteTemplate(w, "dashboard.html", nil)
+	session := SessionManager.Load(r)
+	username, _ := session.GetString("username")
+
+	data := struct{ Username string }{username}
+	templates.ExecuteTemplate(w, "dashboard.html", &data)
 }
 
 func main() {
 
+	mux := http.NewServeMux()
+
 	// Serve css directory as static files
 	fs := http.FileServer(http.Dir("css"))
-	http.Handle("/css/", http.StripPrefix("/css/", fs))
+	mux.Handle("/css/", http.StripPrefix("/css/", fs))
 
-    // Handles used for GitHub OAuth login
-	http.HandleFunc("/login/", HandleGitHubLogin)
-	http.HandleFunc("/github_oauth_cb", HandleGitHubCallback) // Note missing trailing slash!
+	// Handles used for GitHub OAuth login/logout
+	mux.HandleFunc("/login/", HandleGitHubLogin)
+	mux.HandleFunc("/logout/", HandleGitHubLogout)
+	mux.HandleFunc("/github_oauth_cb", HandleGitHubCallback) // Note missing trailing slash!
 
-	http.HandleFunc("/", handleDashboard)
-	http.ListenAndServe(":8080", nil)
+	mux.HandleFunc("/", handleDashboard)
+	http.ListenAndServe(":8080", SessionManager.Use(mux))
 }

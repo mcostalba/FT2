@@ -23,15 +23,26 @@ var (
 	oauthStateString = "thisshouldberandom"
 )
 
-//  Redirect to GitHub’s authorization page
+// Login through GitHub’s authorization page
 func HandleGitHubLogin(w http.ResponseWriter, r *http.Request) {
 
 	url := oauthConf.AuthCodeURL(oauthStateString)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
+// Logout from current session
+func HandleGitHubLogout(w http.ResponseWriter, r *http.Request) {
+
+	session := SessionManager.Load(r)
+	session.PutString(w, "username", "")
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+}
+
 // Called by github after authorization is granted
 func HandleGitHubCallback(w http.ResponseWriter, r *http.Request) {
+
+	session := SessionManager.Load(r)
+	session.PutString(w, "username", "")
 
 	state := r.FormValue("state")
 	if state != oauthStateString {
@@ -56,6 +67,9 @@ func HandleGitHubCallback(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
-	fmt.Printf("Logged in as GitHub user: %s\n", *user.Login)
+
+	// Save credentials on the client side using a secure cookie
+	session.PutString(w, "username", *user.Login)
+
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
