@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-var templates = template.Must(template.ParseFiles("templ/dashboard.html"))
+var templates = template.Must(template.ParseFiles("templ/tests.html", "templ/sidebar.html", "templ/base.html"))
 
 // Initialize a new encrypted-cookie based session manager
 var SessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
@@ -17,7 +17,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 	username, _ := session.GetString("username")
 
 	data := struct{ Username string }{username}
-	templates.ExecuteTemplate(w, "dashboard.html", &data)
+	templates.ExecuteTemplate(w, "layout", &data)
 }
 
 func main() {
