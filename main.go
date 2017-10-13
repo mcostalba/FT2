@@ -7,7 +7,7 @@ import (
 
 var templates = template.Must(template.ParseFiles("templ/dashboard.html"))
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func handleDashboard(w http.ResponseWriter, r *http.Request) {
 
 	templates.ExecuteTemplate(w, "dashboard.html", nil)
 }
@@ -18,6 +18,10 @@ func main() {
 	fs := http.FileServer(http.Dir("css"))
 	http.Handle("/css/", http.StripPrefix("/css/", fs))
 
-	http.HandleFunc("/", handler)
+    // Handles used for GitHub OAuth login
+	http.HandleFunc("/login/", HandleGitHubLogin)
+	http.HandleFunc("/github_oauth_cb", HandleGitHubCallback) // Note missing trailing slash!
+
+	http.HandleFunc("/", handleDashboard)
 	http.ListenAndServe(":8080", nil)
 }
