@@ -6,13 +6,12 @@ import (
 	"golang.org/x/oauth2"
 	"net/http"
 	"os"
-	"strings"
 )
 
 var (
 	oauthConf = &oauth2.Config{
-		ClientID:     strings.TrimSpace(os.Getenv("githubkey")),
-		ClientSecret: strings.TrimSpace(os.Getenv("githubsecret")),
+		ClientID:     os.Getenv("githubkey"),
+		ClientSecret: os.Getenv("githubsecret"),
 		Scopes:       []string{"user:email"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://github.com/login/oauth/authorize",
