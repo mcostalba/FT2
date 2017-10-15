@@ -3,24 +3,45 @@ package main
 import (
 	"github.com/alexedwards/scs"
 	"html/template"
+	"log"
 	"net/http"
 )
 
-var templates = template.Must(template.ParseFiles("templ/tests.html", "templ/sidebar.html", "templ/base.html"))
+type Page struct {
+	Username string
+	Data     DBResults
+}
 
-// Initialize a new encrypted-cookie based session manager
-var SessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
+var (
+	// Initialize a new encrypted-cookie based session manager
+	SessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
+	templates      = template.Must(template.ParseFiles("templ/tests.html", "templ/sidebar.html", "templ/base.html"))
+)
 
 func handleDashboard(w http.ResponseWriter, r *http.Request) {
 
+	var page Page
+
 	session := SessionManager.Load(r)
 	username, _ := session.GetString("username")
+	page.Username = username
 
-	data := struct{ Username string }{username}
-	templates.ExecuteTemplate(w, "layout", &data)
+	db := DB()
+	defer db.Close()
+
+	err := db.Runs(5, &page.Data)
+	if err != nil {
+		log.Printf("RunQuery : ERROR : %s\n", err)
+	}
+
+	templates.ExecuteTemplate(w, "layout", &page)
 }
 
 func main() {
+
+	// Connect to MongoDB
+	DialDB()
+	defer CloseDB()
 
 	mux := http.NewServeMux()
 
