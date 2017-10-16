@@ -11,7 +11,6 @@ type (
 	DBSession struct {
 		s *mgo.Session
 	}
-
 	DBResults struct {
 		M []bson.M
 	}
@@ -25,8 +24,15 @@ var (
 
 // Global visibility: our API
 func (d *DBSession) Runs(limit int, results *DBResults) error {
+
+	notDeleted := bson.M{"$or": []interface{}{
+		bson.M{"deleted": nil},
+		bson.M{"deleted": 0}}}
+
+	stateAndTime := []string{"finished", "-last_updated", "-start_time"}
+
 	c := d.s.DB(dbname).C("runs")
-	return c.Find(nil).Limit(limit).All(&results.M)
+	return c.Find(notDeleted).Sort(stateAndTime...).Limit(limit).All(&results.M)
 }
 
 func (d *DBSession) Users(limit int, results *DBResults) error {
@@ -44,7 +50,7 @@ func (d *DBSession) Close() {
 //    db := DB()
 //    defer db.Close()
 //
-//    r := db.Runs()
+//    r := db.Runs(...)
 //
 func DB() *DBSession {
 	return &DBSession{masterDBSession.s.Copy()}

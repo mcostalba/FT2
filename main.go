@@ -15,10 +15,12 @@ type Page struct {
 var (
 	// Initialize a new encrypted-cookie based session manager
 	SessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
-	templates      = template.Must(template.ParseFiles("templ/tests.html", "templ/sidebar.html", "templ/base.html"))
+
+	// Define and parse at startup our templates, one for each handler
+	runsTemplate = template.Must(template.ParseFiles("templ/runs.html", "templ/base.html"))
 )
 
-func handleDashboard(w http.ResponseWriter, r *http.Request) {
+func handleRuns(w http.ResponseWriter, r *http.Request) {
 
 	var page Page
 
@@ -29,12 +31,12 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 	db := DB()
 	defer db.Close()
 
-	err := db.Runs(5, &page.Data)
+	err := db.Runs(50, &page.Data)
 	if err != nil {
 		log.Printf("RunQuery : ERROR : %s\n", err)
 	}
 
-	templates.ExecuteTemplate(w, "layout", &page)
+	runsTemplate.ExecuteTemplate(w, "layout", &page)
 }
 
 func main() {
@@ -54,6 +56,6 @@ func main() {
 	mux.HandleFunc("/logout/", HandleGitHubLogout)
 	mux.HandleFunc("/github_oauth_cb", HandleGitHubCallback) // Note missing trailing slash!
 
-	mux.HandleFunc("/", handleDashboard)
+	mux.HandleFunc("/", handleRuns)
 	http.ListenAndServe(":8080", SessionManager.Use(mux))
 }

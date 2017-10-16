@@ -1,30 +1,38 @@
 {{ define "layout" }}
 <!DOCTYPE html>
 <html lang="en">
+  <head>{{ template "head" }}</head>
+  <body>
+    {{ template "navbar" . }}
+    <div class="container-fluid">
+      <div class="row">
+        {{ template "sidebar" }}
+        {{ template "content" . }}
+      </div>
+    </div>
+    {{ template "javascripts" }}
+</body></html>
+{{ end }}
 
-  <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    
+{{ define "head" }}
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
     <meta name="author" content="">
     <link rel="icon" href="https://getbootstrap.com/favicon.ico">
-
     <title>FT2</title>
-
     <!-- Bootstrap core CSS -->
     <link href="/css/bootstrap.min.css" rel="stylesheet">
-
     <!-- Custom styles for this template -->
     <link href="/css/dashboard.css" rel="stylesheet">
-  </head>
+{{ end }}
 
-  <body>
+{{ define "navbar" }}
     <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
       <a class="navbar-brand" href="/dashboard/">FT2</a>
       <button class="navbar-toggler d-lg-none" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
-
       <div class="collapse navbar-collapse" id="navbarsExampleDefault">
         <ul class="navbar-nav mr-auto">
           <li class="nav-item">
@@ -47,18 +55,61 @@
         </form>
       </div>
     </nav>
+{{ end }}
 
-    <div class="container-fluid">
-      <div class="row">
+{{ define "sidebar" }}
+        <nav class="col-sm-3 col-md-2 d-none d-sm-block bg-light sidebar">
+          <ul class="nav nav-pills flex-column">
+            <li class="nav-item">
+              <a class="nav-link active" href="/dashboard/">Overview <span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/dashboard/">Greens</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/dashboard/">New</a>
+            </li>
+          </ul>
 
-        {{ template "sidebar" }}
-        
-        {{ template "content" .Data }}
-        
-            
-      </div>
-    </div>
+          <ul class="nav nav-pills flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="/dashboard/">Users</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/dashboard/">Top Month</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/dashboard/">Actions</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://github.com/glinscott/fishtest/wiki" target="_blank">Wiki</a>
+            </li>            
+          </ul>
 
+          <ul class="nav nav-pills flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="https://github.com/official-stockfish/Stockfish" target="_blank">GitHub</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://groups.google.com/forum/?fromgroups=#!forum/fishcooking" target="_blank">Forum</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://groups.google.com/forum/?fromgroups=#!forum/fishcooking_results" target="_blank">History</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://hxim.github.io/Stockfish-Evaluation-Guide/" target="_blank">Eval Guide</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/dashboard/">Regressions</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="http://abrok.eu/stockfish/" target="_blank">Compiles</a>
+            </li>
+          </ul>
+        </nav>
+{{ end }}
+
+{{ define "javascripts" }}
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
@@ -68,6 +119,4 @@
     <script src="/css/bootstrap.min.js.download"></script>
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     <script src="/css/ie10-viewport-bug-workaround.js.download"></script>
-
-</body></html>
 {{ end }}

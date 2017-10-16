@@ -1,0 +1,21 @@
+{{ define "content" }}
+        <main class="col-sm-9 ml-sm-auto col-md-10 pt-3" role="main">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tbody>
+                {{ range .Data.M }}
+                <tr>
+                  <td>{{ .finished }}</td>
+                  <td>{{ .args.new_tag }}</td>
+                  <td>{{ .results }}</td>
+                  <td>{{ .args.tc }}</td>
+                  <td>{{ .args.num_games }}</td>
+                  <td>{{ .args.threads }}</td>
+                  <td>{{ .args.info }}</td>
+                </tr>
+                {{ end }}
+              </tbody>
+            </table>
+          </div>
+        </main>
+{{ end }}
