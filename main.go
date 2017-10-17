@@ -10,6 +10,7 @@ import (
 type Page struct {
 	Username string
 	Data     DBResults
+	Fmt      FmtFunc // Trick to call formatting functions from inside templates
 }
 
 var (

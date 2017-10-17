@@ -1,0 +1,119 @@
+package main
+
+import (
+	"fmt"
+	"labix.org/v2/mgo/bson"
+	"strconv"
+	"time"
+)
+
+const (
+	cRed    = "#ffb3b3"
+	cYellow = "#ffff80"
+	cGreen  = "#8cf28c"
+)
+
+// Helper to parse elo/score in old format and rewrite in new formatting
+func parse_old_elo(s string) string {
+
+	var llr, llrMax, a, b, x float64
+	var g, t int
+	var h string
+
+	fmt.Sscanf(s, "%4s %f (%f,%f) [%f,%f]", &h, &llr, &x, &llrMax, &a, &b)
+
+	if h == "LLR:" { // SPRT
+		p := int(llr * 100 / (llrMax + 0.01))
+		return fmt.Sprintf("LLR: %d%% SPRT[%d, %d]", p, int(a), int(b))
+	}
+	fmt.Sscanf(s, "%d/%d %10s", &g, &t, &h)
+
+	if h == "iterations" { // SPSA
+		p := int(g * 100 / (t + 1))
+		return fmt.Sprintf("SPSA: %d/%d (%d%%)", g, t, p)
+	}
+	fmt.Sscanf(s, "%4s %f +-%f (%d%%) LOS: %f", &h, &a, &b, &g, &x)
+
+	if h == "ELO:" { // Fixed games
+		return fmt.Sprintf("ELO: %.2f +-%.2f LOS: %.2f%%", a, b, x)
+	}
+	return s
+}
+
+type FmtFunc struct{}
+
+// Set the led color according to the test state. Return a map to workaround
+// the single value limit of the template functions.
+func (_ FmtFunc) Led(finished bool, tasks []interface{}) bson.M {
+
+	if finished {
+		return bson.M{"Color": "gray", "Workers": ""}
+	}
+	workers := 0
+	for _, t := range tasks {
+		if t.(bson.M)["active"].(bool) {
+			workers++
+		}
+	}
+
+	if workers > 0 {
+		return bson.M{"Color": "limegreen", "Workers": strconv.Itoa(workers)}
+	}
+	return bson.M{"Color": "gold", "Workers": ""}
+}
+
+// Compute ELO and SPRT stats of the test
+func (_ FmtFunc) Elo(results bson.M, tc string, threads int, sprt, spsa, results_info interface{}) bson.M {
+
+	colorMap := map[string](string){"#FF6A6A": cRed, "yellow": cYellow, "#44EB44": cGreen}
+	var info, crashes, color string
+
+	w, l, d := results["wins"].(int), results["losses"].(int), results["draws"].(int)
+	c, ok1 := results["crashes"].(int) // New tests don't have this info
+	t, ok2 := results["time_losses"].(int)
+
+	if ok1 && ok2 {
+		crashes = fmt.Sprintf("(c%v t%v)", c, t)
+	}
+	// For finished runs results are saved in results_info.info that is a
+	// slice of strings, usually 2, one for each box line.
+	if results_info != nil {
+		r := results_info.(bson.M)
+		i, ok := r["info"].([]interface{})
+		if ok && len(r) > 0 {
+			info = parse_old_elo(i[0].(string)) // Only first line is used
+			color, _ = colorMap[r["style"].(string)]
+		}
+	} else if sprt != nil {
+		info = fmt.Sprintf("LLR: -46%% SPRT[0, 5]")
+	} else if spsa != nil {
+		info = fmt.Sprintf("SPSA: 4964/20000 (0.2%%)")
+	} else {
+		info = fmt.Sprintf("ELO: 0.71 +-2.9 LOS: 68.2%%")
+	}
+	s := "%s tc %s th %v\nTot: %v W: %v L: %v D: %v %s"
+	info = fmt.Sprintf(s, info, tc, threads, w+l+d, w, l, d, crashes)
+	return bson.M{"Color": color, "Info": info}
+}
+
+// Fancy formatting of time since test has been submitted
+func (_ FmtFunc) Date(start_time time.Time) string {
+
+	d := time.Since(start_time)
+	m, h := d.Minutes(), d.Hours()
+
+	if m < 1.0 {
+		return "now"
+	} else if m < 60.0 {
+		return fmt.Sprintf("%v min", int(m))
+	} else if int(h) == 1 {
+		return fmt.Sprintf("%v hour", int(h))
+	} else if h < 24.0 {
+		return fmt.Sprintf("%v hours", int(h))
+	} else if int(h/24) == 1 {
+		return fmt.Sprintf("%v day", int(h/24))
+	} else if h < 24.0*3 {
+		return fmt.Sprintf("%v days", int(h/24))
+	}
+	return start_time.Format("02-01-2006")
+}

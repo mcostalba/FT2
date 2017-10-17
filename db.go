@@ -25,10 +25,7 @@ var (
 // Global visibility: our API
 func (d *DBSession) Runs(limit int, results *DBResults) error {
 
-	notDeleted := bson.M{"$or": []interface{}{
-		bson.M{"deleted": nil},
-		bson.M{"deleted": 0}}}
-
+	notDeleted := bson.M{"deleted": bson.M{"$ne": 1}}
 	stateAndTime := []string{"finished", "-last_updated", "-start_time"}
 
 	c := d.s.DB(dbname).C("runs")
