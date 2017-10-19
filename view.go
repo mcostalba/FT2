@@ -55,7 +55,6 @@ func (_ FmtFunc) Led(finished bool, tasks []interface{}) bson.M {
 			workers++
 		}
 	}
-
 	if workers > 0 {
 		return bson.M{"Color": "limegreen", "Workers": strconv.Itoa(workers)}
 	}
@@ -85,11 +84,23 @@ func (_ FmtFunc) Elo(results bson.M, tc string, threads int, sprt, spsa, results
 			color, _ = colorMap[r["style"].(string)]
 		}
 	} else if sprt != nil {
-		info = fmt.Sprintf("LLR: -46%% SPRT[0, 5]")
+		s := sprt.(bson.M)
+		elo0 := s["elo0"].(float64)
+		alpha := s["alpha"].(float64)
+		elo1 := s["elo1"].(float64)
+		beta := s["beta"].(float64)
+		sprt := Compute_sprt(w, l, d, elo0, alpha, elo1, beta)
+		p := int(sprt.llr * 100 / (sprt.upper_bound + 0.0001))
+		info = fmt.Sprintf("LLR: %d%% SPRT[%d, %d]", p, int(elo0), int(elo1))
 	} else if spsa != nil {
-		info = fmt.Sprintf("SPSA: 4964/20000 (0.2%%)")
+		s := spsa.(bson.M)
+		i := s["iter"].(int)
+		n := s["num_iter"].(int)
+		p := i * 100 / n
+		info = fmt.Sprintf("SPSA: %d/%d (%d%%)", i, n, p)
 	} else {
-		info = fmt.Sprintf("ELO: 0.71 +-2.9 LOS: 68.2%%")
+		el, elo95, los := Compute_elo(w, l, d)
+		info = fmt.Sprintf("ELO: %.2f +-%.2f LOS: %.2f%%", el, elo95, los)
 	}
 	s := "%s tc %s th %v\nTot: %v W: %v L: %v D: %v %s"
 	info = fmt.Sprintf(s, info, tc, threads, w+l+d, w, l, d, crashes)
