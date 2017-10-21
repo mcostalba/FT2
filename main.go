@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"path/filepath"
+	"strconv"
 )
 
 type Page struct {
@@ -18,25 +20,37 @@ var (
 	SessionManager = scs.NewCookieManager("u46IpCV9y5Vlur8YvODJEhgOY8m9JVE4")
 
 	// Define and parse at startup our templates, one for each handler
-	runsTemplate = template.Must(template.ParseFiles("templ/runs.html", "templ/base.html"))
+	runsTemplate    = template.Must(template.ParseFiles("templ/runs.html", "templ/base.html"))
+	getRunsTemplate = template.Must(template.ParseFiles("templ/get_runs.html"))
 )
 
-func handleRuns(w http.ResponseWriter, r *http.Request) {
+func handleGetRuns(w http.ResponseWriter, r *http.Request) {
+
+	path := r.URL.EscapedPath()
+	path = filepath.Base(path)
+	ofs, err := strconv.Atoi(path)
+	if err != nil {
+		return
+	}
 
 	var page Page
-
-	session := SessionManager.Load(r)
-	username, _ := session.GetString("username")
-	page.Username = username
-
 	db := DB()
 	defer db.Close()
 
-	err := db.Runs(50, &page.Data)
+	err = db.Runs(ofs*50, 50, &page.Data)
 	if err != nil {
 		log.Printf("RunQuery : ERROR : %s\n", err)
 	}
 
+	getRunsTemplate.ExecuteTemplate(w, "layout", &page)
+}
+
+func handleRuns(w http.ResponseWriter, r *http.Request) {
+
+	var page Page
+	session := SessionManager.Load(r)
+	username, _ := session.GetString("username")
+	page.Username = username
 	runsTemplate.ExecuteTemplate(w, "layout", &page)
 }
 
@@ -58,5 +72,6 @@ func main() {
 	mux.HandleFunc("/github_oauth_cb", HandleGitHubCallback) // Note missing trailing slash!
 
 	mux.HandleFunc("/", handleRuns)
+	mux.HandleFunc("/get_runs/", handleGetRuns)
 	http.ListenAndServe(":8080", SessionManager.Use(mux))
 }

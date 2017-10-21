@@ -1,0 +1,24 @@
+{{ define "layout" }}
+    {{ range .Data.M }}
+    {{ $c := $.Fmt.Led .finished .tasks }}
+    {{ $diff := printf "%.7s...%.7s" .args.resolved_base .args.resolved_new }}
+    {{ $elo := $.Fmt.Elo .results .args.tc .args.threads .args.sprt .args.spsa .results_info }}
+    <tr>
+     <td><small style="color:{{ $c.Color }}"><i class="fa fa-circle" aria-hidden="true"></i><a>{{ $c.Workers }}</a></small></td>
+
+     <td><a href="http://tests.stockfishchess.org/tests/view/{{ ._id.Hex }}">{{ .args.new_tag }}</a>
+         <a class="small" href="{{.args.tests_repo}}/compare/{{$diff}}" target="_blank"><i class="fa fa-ellipsis-h" aria-hidden="true"></i></a>
+     </td>
+
+     <td><a href="http://tests.stockfishchess.org/tests/user/{{ .args.username }}">{{ .args.username }}</a></td>
+
+     <td><div class="card px-1 py-1" style="background-color:{{ $elo.Color }}">
+         <small class="card-subtitle" style="white-space:pre">{{ $elo.Info }}</small>
+     </div></td>
+
+     <td class="small" style="white-space:nowrap">{{ $.Fmt.Date .start_time }}</td>
+
+     <td>{{ .args.info }}</td>
+    </tr>
+    {{ end }}
+{{ end }}
