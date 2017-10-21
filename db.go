@@ -23,13 +23,13 @@ var (
 )
 
 // Global visibility: our API
-func (d *DBSession) Runs(limit int, results *DBResults) error {
+func (d *DBSession) Runs(ofs, limit int, results *DBResults) error {
 
 	notDeleted := bson.M{"deleted": bson.M{"$ne": 1}}
 	stateAndTime := []string{"finished", "-last_updated", "-start_time"}
 
 	c := d.s.DB(dbname).C("runs")
-	return c.Find(notDeleted).Sort(stateAndTime...).Limit(limit).All(&results.M)
+	return c.Find(notDeleted).Sort(stateAndTime...).Skip(ofs).Limit(limit).All(&results.M)
 }
 
 func (d *DBSession) Users(limit int, results *DBResults) error {
