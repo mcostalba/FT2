@@ -5,6 +5,7 @@ import (
 	"labix.org/v2/mgo/bson"
 	"log"
 	"os"
+	"time"
 )
 
 type (
@@ -41,7 +42,7 @@ func (d *DBSession) Close() {
 	d.s.Close()
 }
 
-// Allow concurrent requests, so that each handler (in its coroutine) uses a
+// Allow concurrent requests, so that each handler (in its goroutine) uses a
 // different and concurrent connection.
 // Usage:
 //    db := DB()
@@ -54,7 +55,7 @@ func DB() *DBSession {
 }
 
 func DialDB() {
-	// MongoDB server is assumed to be on the same machine, if not user should use
+	// MongoDB is assumed to be on the same machine, if not user should use
 	// ssh with port forwarding to access the remote host.
 	session, err := mgo.Dial("localhost:27017")
 	if err != nil {
@@ -75,6 +76,22 @@ func DialDB() {
 
 	if cnt != 2 {
 		log.Fatal("Cannot find expected collections")
+	}
+
+	// Ensure an index on 'runs' collection to speed up sorting
+	oneDay, _ := time.ParseDuration("24h")
+	index := mgo.Index{
+		Key:         []string{"finished", "-last_updated", "-start_time"},
+		Unique:      false,
+		DropDups:    false,
+		Background:  true,
+		Sparse:      false,
+		ExpireAfter: oneDay, // FIXME remove when in production
+	}
+	c := session.DB(dbname).C("runs")
+	err = c.EnsureIndex(index)
+	if err != nil {
+		log.Fatal("Error while creating an index on 'runs': %s", err)
 	}
 
 	log.Println("DB connected!")
