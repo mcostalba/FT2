@@ -69,7 +69,7 @@ func (_ FmtFunc) Elo(results bson.M, tc string, threads int, sprt, spsa, results
 	colorMap := map[string](string){"#FF6A6A": cRed, "yellow": cYellow, "#44EB44": cGreen}
 	var info, crashes, color, border string
 
-	if strings.HasPrefix(tc, "60") {
+	if strings.HasPrefix(tc, "60") { // LTC
 		border = cGray
 	}
 
