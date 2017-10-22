@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"labix.org/v2/mgo/bson"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -11,6 +12,7 @@ const (
 	cRed    = "#ffb3b3"
 	cYellow = "#ffff80"
 	cGreen  = "#8cf28c"
+	cGray   = "#262626"
 )
 
 // Helper to parse elo/score in old format and rewrite in new formatting
@@ -65,7 +67,11 @@ func (_ FmtFunc) Led(finished bool, tasks []interface{}) bson.M {
 func (_ FmtFunc) Elo(results bson.M, tc string, threads int, sprt, spsa, results_info interface{}) bson.M {
 
 	colorMap := map[string](string){"#FF6A6A": cRed, "yellow": cYellow, "#44EB44": cGreen}
-	var info, crashes, color string
+	var info, crashes, color, border string
+
+	if strings.HasPrefix(tc, "60") {
+		border = cGray
+	}
 
 	w, l, d := results["wins"].(int), results["losses"].(int), results["draws"].(int)
 	c, ok1 := results["crashes"].(int) // New tests don't have this info
@@ -104,7 +110,7 @@ func (_ FmtFunc) Elo(results bson.M, tc string, threads int, sprt, spsa, results
 	}
 	s := "%s tc %s th %v\nTot: %v W: %v L: %v D: %v %s"
 	info = fmt.Sprintf(s, info, tc, threads, w+l+d, w, l, d, crashes)
-	return bson.M{"Color": color, "Info": info}
+	return bson.M{"Color": color, "Border": border, "Info": info}
 }
 
 // Fancy formatting of time since test has been submitted
