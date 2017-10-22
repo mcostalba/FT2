@@ -18,7 +18,7 @@
 
      <td class="small" style="white-space:nowrap">{{ $.Fmt.Date .start_time }}</td>
 
-     <td>{{ .args.info }}</td>
+     <td>{{ $.Fmt.UnescapeURL .args.info }}</td>
     </tr>
     {{ end }}
 {{ end }}

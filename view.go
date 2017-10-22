@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"labix.org/v2/mgo/bson"
+	"mvdan.cc/xurls"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +16,8 @@ const (
 	cGreen  = "#8cf28c"
 	cGray   = "#262626"
 )
+
+var urlsRe = xurls.Strict()
 
 // Helper to parse elo/score in old format and rewrite in new formatting
 func parse_old_elo(s string) string {
@@ -133,4 +137,20 @@ func (_ FmtFunc) Date(start_time time.Time) string {
 		return fmt.Sprintf("%v days", int(h/24))
 	}
 	return start_time.Format("02-01-2006")
+}
+
+// Convert any url in a string in a href. Return a template.HTML
+// to avoid template engine escapes the string.
+func (_ FmtFunc) UnescapeURL(in string) template.HTML {
+
+	list := urlsRe.FindAllString(in, -1)
+	if len(list) == 0 {
+		return template.HTML(in)
+	}
+	out := in
+	for _, u := range list {
+		s := fmt.Sprintf("<a href=\"%s\" target=\"_blank\">%s</a>", u, u)
+		out = strings.Replace(out, u, s, -1)
+	}
+	return template.HTML(out)
 }
