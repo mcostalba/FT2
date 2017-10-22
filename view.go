@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"labix.org/v2/mgo/bson"
 	"strconv"
@@ -128,3 +129,57 @@ func (_ FmtFunc) Date(start_time time.Time) string {
 	}
 	return start_time.Format("02-01-2006")
 }
+
+func ViewRunsJSON(dbData DBResults) []byte {
+
+	var ff FmtFunc
+	var buf []byte
+
+	for _, m := range dbData.M {
+
+		c := ff.Led(m["finished"].(bool), m["tasks"].([]interface{}))
+
+		results := m["results"].(bson.M)
+		tc, _ := m["tc"].(string)
+		threads, _ := m["threads"].(int)
+		sprt := m["sprt"]
+		spsa := m["spsa"]
+		results_info := m["results_info"]
+		r := ff.Elo(results, tc, threads, sprt, spsa, results_info)
+
+		delete(m, "tasks")
+		delete(m, "results")
+		delete(m["args"].(bson.M), "sprt")
+		delete(m["args"].(bson.M), "spsa")
+		delete(m, "bad_tasks")
+
+		m["LedColor"] = c["Color"]
+		m["Workers"] = c["Workers"]
+		m["EloColor"] = r["Color"]
+		m["EloInfo"] = r["Info"]
+
+		b, _ := json.Marshal(m)
+		buf = append(buf, b...)
+	}
+	return buf
+}
+
+/*
+   <tr>
+    <td><small style="color:{{ $c.Color }}"><i class="fa fa-circle" aria-hidden="true"></i><a>{{ $c.Workers }}</a></small></td>
+
+    <td><a href="http://tests.stockfishchess.org/tests/view/{{ ._id.Hex }}">{{ .args.new_tag }}</a>
+        <a class="small" href="{{.args.tests_repo}}/compare/{{$diff}}" target="_blank"><i class="fa fa-ellipsis-h" aria-hidden="true"></i></a>
+    </td>
+
+    <td><a href="http://tests.stockfishchess.org/tests/user/{{ .args.username }}">{{ .args.username }}</a></td>
+
+    <td><div class="card px-1 py-1" style="background-color:{{ $elo.Color }}">
+        <small class="card-subtitle" style="white-space:pre">{{ $elo.Info }}</small>
+    </div></td>
+
+    <td class="small" style="white-space:nowrap">{{ $.Fmt.Date .start_time }}</td>
+
+    <td>{{ .args.info }}</td>
+   </tr>
+*/

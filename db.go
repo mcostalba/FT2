@@ -29,7 +29,7 @@ func (d *DBSession) Runs(ofs, limit int, results *DBResults) error {
 	stateAndTime := []string{"finished", "-last_updated", "-start_time"}
 
 	c := d.s.DB(dbname).C("runs")
-	return c.Find(notDeleted).Sort(stateAndTime...).Limit(ofs + limit).Skip(ofs).All(&results.M)
+	return c.Find(notDeleted).Sort(stateAndTime...).Skip(ofs).Limit(ofs + limit).All(&results.M)
 }
 
 func (d *DBSession) Users(limit int, results *DBResults) error {

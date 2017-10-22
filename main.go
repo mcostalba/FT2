@@ -45,6 +45,32 @@ func handleGetRuns(w http.ResponseWriter, r *http.Request) {
 	getRunsTemplate.ExecuteTemplate(w, "layout", &page)
 }
 
+func handleGetRunsJSON(w http.ResponseWriter, r *http.Request) {
+
+	path := r.URL.EscapedPath()
+	path = filepath.Base(path)
+	ofs, err := strconv.Atoi(path)
+	if err != nil {
+		return
+	}
+
+	var page Page
+	db := DB()
+	defer db.Close()
+
+	err = db.Runs(ofs*50, 50, &page.Data)
+	if err != nil {
+		log.Printf("RunQuery : ERROR : %s\n", err)
+	}
+
+	js := ViewRunsJSON(page.Data)
+
+	log.Println(len(js))
+
+	//w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
 func handleRuns(w http.ResponseWriter, r *http.Request) {
 
 	var page Page
@@ -73,5 +99,6 @@ func main() {
 
 	mux.HandleFunc("/", handleRuns)
 	mux.HandleFunc("/get_runs/", handleGetRuns)
+	mux.HandleFunc("/get_runsJSON/", handleGetRunsJSON)
 	http.ListenAndServe(":8080", SessionManager.Use(mux))
 }
