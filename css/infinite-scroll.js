@@ -7,10 +7,17 @@ var infScroll = new InfiniteScroll( '#infinitetable', {
   },
   responseType: 'text',
   history: 'false',
-})
+});
 
 infScroll.on( 'load', function( response ) {
-  infinitetable.insertAdjacentHTML('beforeend', response);
+  const r = response.split("!-- End of machines --");
+  infinitetable.insertAdjacentHTML('beforeend', r[r.length-1]);
+  if (r.length > 1)
+    machinesContainer.innerHTML = r[0];
 });
+
+function showMachines() {
+  $("#machines").modal();
+}
 
 infScroll.loadNextPage(); // load initial page

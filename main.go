@@ -10,6 +10,7 @@ import (
 
 type Page struct {
 	Username string
+	PageNum  int
 	Data     DBResults
 	Fmt      FmtFunc // Trick to call formatting functions from inside templates
 }
@@ -20,7 +21,7 @@ var (
 
 	// Define and parse at startup our templates, one for each handler
 	runsTemplate    = template.Must(template.ParseFiles("templ/runs.html", "templ/base.html"))
-	getRunsTemplate = template.Must(template.ParseFiles("templ/get_runs.html"))
+	getRunsTemplate = template.Must(template.ParseFiles("templ/get_runs.html", "templ/machines.html"))
 )
 
 func handleGetRuns(w http.ResponseWriter, r *http.Request) {
@@ -31,9 +32,9 @@ func handleGetRuns(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var page Page
 	db := DB()
 	defer db.Close()
+	page := Page{PageNum: ofs}
 
 	err = db.Runs(ofs*50, 50, &page.Data)
 	if err != nil {

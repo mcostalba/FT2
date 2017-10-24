@@ -154,3 +154,22 @@ func (_ FmtFunc) UnescapeURL(in string) template.HTML {
 	}
 	return template.HTML(out)
 }
+
+// Setup machine info page
+func (_ FmtFunc) Machines(run bson.M) []bson.M {
+
+	var workers []bson.M
+	tasks := run["tasks"].([]interface{})
+
+	for _, t := range tasks {
+		task := t.(bson.M)
+		if task["active"].(bool) {
+			info := task["worker_info"].(bson.M)
+			nps, _ := task["nps"].(int)
+			last_updated, _ := task["last_updated"].(time.Time)
+			m := bson.M{"last_updated": last_updated, "nps": nps, "info": info}
+			workers = append(workers, m)
+		}
+	}
+	return workers
+}
