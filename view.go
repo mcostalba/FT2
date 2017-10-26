@@ -156,9 +156,10 @@ func (_ FmtFunc) UnescapeURL(in string) template.HTML {
 }
 
 // Setup machine info page
-func (_ FmtFunc) Machines(run bson.M) []bson.M {
+func (_ FmtFunc) Machines(run bson.M) bson.M {
 
 	var workers []bson.M
+	sum := map[string]int{"machines": 0, "cores": 0}
 	tasks := run["tasks"].([]interface{})
 
 	for _, t := range tasks {
@@ -166,11 +167,23 @@ func (_ FmtFunc) Machines(run bson.M) []bson.M {
 		if task["active"].(bool) {
 			info := task["worker_info"].(bson.M)
 			nps, _ := task["nps"].(int)
-			last_updated, _ := task["last_updated"].(time.Time)
 			flag, _ := info["country_code"].(string)
-			m := bson.M{"last_updated": last_updated, "nps": nps, "info": info, "flag": strings.ToLower(flag)}
+			last_updated, _ := task["last_updated"].(time.Time)
+			d := time.Since(last_updated)
+			idle := false
+			if d.Minutes() > 5 {
+				idle = true
+			}
+			m := bson.M{
+				"info": info,
+				"idle": idle,
+				"nps":  nps,
+				"flag": strings.ToLower(flag),
+			}
 			workers = append(workers, m)
+			sum["machines"] += 1
+			sum["cores"] += info["concurrency"].(int)
 		}
 	}
-	return workers
+	return bson.M{"workers": workers, "sum": sum}
 }
