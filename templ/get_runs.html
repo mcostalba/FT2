@@ -10,8 +10,8 @@
      <td><small style="color:{{ $c.Color }}"><i class="fa fa-circle" aria-hidden="true"></i><br>
          <a href="#" onclick="showMachines({{ .args.new_tag }})">{{ $c.Workers }}</a></small></td>
 
-     <td><a href="http://tests.stockfishchess.org/tests/view/{{ ._id.Hex }}">{{ .args.new_tag }}</a>
-         <a class="small" href="{{.args.tests_repo}}/compare/{{$diff}}" target="_blank"><i class="fa fa-ellipsis-h" aria-hidden="true"></i></a>
+     <td><a href="http://tests.stockfishchess.org/tests/view/{{ ._id.Hex }}">{{ printf "%.30s" .args.new_tag }}</a>
+         <a class="small" href="{{.args.tests_repo}}/compare/{{$diff}}" target="_blank">{{ printf " %.4s" .args.resolved_new }}</i></a>
      </td>
 
      <td><a href="http://tests.stockfishchess.org/tests/user/{{ .args.username }}">{{ .args.username }}</a></td>
