@@ -16,7 +16,9 @@ infScroll.on( 'load', function( response ) {
     machinesContainer.innerHTML = r[0];
 });
 
-function showMachines() {
+function showMachines(run) {
+  $(".collapse").collapse('hide');
+  $("#"+run).collapse('show');
   $("#machines").modal();
 }
 

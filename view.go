@@ -167,7 +167,8 @@ func (_ FmtFunc) Machines(run bson.M) []bson.M {
 			info := task["worker_info"].(bson.M)
 			nps, _ := task["nps"].(int)
 			last_updated, _ := task["last_updated"].(time.Time)
-			m := bson.M{"last_updated": last_updated, "nps": nps, "info": info}
+			flag, _ := info["country_code"].(string)
+			m := bson.M{"last_updated": last_updated, "nps": nps, "info": info, "flag": strings.ToLower(flag)}
 			workers = append(workers, m)
 		}
 	}

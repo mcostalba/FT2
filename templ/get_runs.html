@@ -8,7 +8,7 @@
     {{ $elo := $.Fmt.Elo .results .args.tc .args.threads .args.sprt .args.spsa .results_info }}
     <tr>
      <td><small style="color:{{ $c.Color }}"><i class="fa fa-circle" aria-hidden="true"></i><br>
-         <a href="#" onclick="showMachines()">{{ $c.Workers }}</a></small></td>
+         <a href="#" onclick="showMachines({{ .args.new_tag }})">{{ $c.Workers }}</a></small></td>
 
      <td><a href="http://tests.stockfishchess.org/tests/view/{{ ._id.Hex }}">{{ .args.new_tag }}</a>
          <a class="small" href="{{.args.tests_repo}}/compare/{{$diff}}" target="_blank"><i class="fa fa-ellipsis-h" aria-hidden="true"></i></a>

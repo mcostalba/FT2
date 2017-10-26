@@ -61,9 +61,9 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// Serve css directory as static files
-	fs := http.FileServer(http.Dir("css"))
-	mux.Handle("/css/", http.StripPrefix("/css/", fs))
+	// Serve static files
+	fs := http.FileServer(http.Dir("static"))
+	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Handles used for GitHub OAuth login/logout
 	mux.HandleFunc("/login/", HandleGitHubLogin)
