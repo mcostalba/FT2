@@ -159,16 +159,23 @@ func (_ FmtFunc) UnescapeURL(in string) template.HTML {
 func (_ FmtFunc) Machines(run bson.M) bson.M {
 
 	var workers []bson.M
-	sum := map[string]int{"machines": 0, "cores": 0}
+	sum := struct {
+		Machines int
+		Cores    int
+		Mnps     float64
+	}{}
+
 	tasks := run["tasks"].([]interface{})
 
 	for _, t := range tasks {
 		task := t.(bson.M)
 		if task["active"].(bool) {
 			info := task["worker_info"].(bson.M)
-			nps, _ := task["nps"].(int)
 			flag, _ := info["country_code"].(string)
 			last_updated, _ := task["last_updated"].(time.Time)
+			cores := info["concurrency"].(int)
+			mnps, _ := task["nps"].(float64)
+			mnps = mnps * float64(cores) / 1000000
 			d := time.Since(last_updated)
 			idle := false
 			if d.Minutes() > 5 {
@@ -177,12 +184,13 @@ func (_ FmtFunc) Machines(run bson.M) bson.M {
 			m := bson.M{
 				"info": info,
 				"idle": idle,
-				"nps":  nps,
+				"mnps": mnps,
 				"flag": strings.ToLower(flag),
 			}
 			workers = append(workers, m)
-			sum["machines"] += 1
-			sum["cores"] += info["concurrency"].(int)
+			sum.Machines += 1
+			sum.Cores += cores
+			sum.Mnps += mnps
 		}
 	}
 	return bson.M{"workers": workers, "sum": sum}

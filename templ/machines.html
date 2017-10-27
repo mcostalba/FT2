@@ -4,13 +4,20 @@
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="machinesTitle">Machines</h5>
+        <h5 class="modal-title text-muted" id="machinesTitle">Active Machines</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <div class="modal-body">
-       <div id="accordion" role="tablist" aria-multiselectable="true">
+      <div class="modal-body container-fluid">
+       <div class="row"><div class="col-sm-auto card mx-3 my-2 border border-primary bg-light text-dark">
+                        <small id="ch-os" class="card-subtitle text-left my-3" style="white-space:pre"></small>
+                        </div>
+                        <div id="ch-machines" class="col-sm"></div>
+                        <div id="ch-cores"    class="col-sm"></div>
+                        <div id="ch-mnps"     class="col-sm"></div>
+                        <div id="ch-flags"    class="col-sm"></div></div>
+       <div class="row"><div id="accordion" class="col" role="tablist" aria-multiselectable="true">
 
         {{ range $i, $e := .Data.M }}
         {{ if eq .finished false }}
@@ -18,30 +25,30 @@
         {{ $w := $m.workers }}
         {{ if $w }}
         {{ $sum := $m.sum }}
-        {{ $id := $e.args.new_tag }}
+        {{ $id := printf "coll%.7s" $e._id.Hex }}
 
         <div class="card">
          <div class="card-header container-fluid" role="tab" id="heading{{$i}}">
           <div class="row">
            <div class="col-auto mr-auto mb-0">
-            <a data-toggle="collapse" data-parent="#accordion" href="#coll{{$i}}" aria-expanded="true" aria-controls="coll{{$i}}">{{ $e.args.new_tag }}</a>
+            <a data-toggle="collapse" data-parent="#accordion" href="#{{$id}}" aria-expanded="true" aria-controls="{{$id}}">{{ $e.args.new_tag }}</a>
            </div>
-           <div class="col-auto small">{{ $sum.machines }} for {{ $sum.cores }} cores</div>
+           <div class="col-auto small">{{ $sum.Machines }} for {{ $sum.Cores }} cores {{ printf "%.2f" $sum.Mnps }} Mnps</div>
           </div>
          </div>
-         <div id="coll{{$i}}" class="collapse" role="tabpanel" aria-labelledby="heading{{$i}}">
+         <div id="{{$id}}" class="collapse" role="tabpanel" aria-labelledby="heading{{$i}}">
           <div class="card-block">
 
            <div class="table-responsive">
-            <table class="table table-striped table-sm">
+            <table class="machines-table table table-striped table-sm">
             <tbody>
              {{ range $w }}
-             {{ if .idle }}<tr class="text-muted font-weight-light">{{ else }}<tr>{{ end }}
+              <tr {{ if .idle }}class="text-muted font-weight-light"{{ end }}>
               <td>{{ .info.username }}</td>
               <td><div class="flag flag-{{.flag}}" style="display:inline-block"></div></td>
               <td>{{ .info.uname }}</td>
               <td>{{ .info.concurrency }}</td>
-              <td>{{ .nps }}</td>
+              <td>{{ printf "%.2f" .mnps }}</td>
              </tr>
             {{ end }}
             </tbody>
@@ -56,7 +63,7 @@
         {{ end }}
         {{ end }}
 
-       </div>
+       </div></div>
       </div>
     </div>
   </div>
