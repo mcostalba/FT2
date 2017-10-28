@@ -3,7 +3,7 @@
 <div class="modal fade" id="machines" tabindex="-1" role="dialog" aria-labelledby="machinesTitle" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header py-2">
         <h5 class="modal-title text-muted" id="machinesTitle">Active Machines</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
@@ -33,7 +33,7 @@
            <div class="col-auto mr-auto mb-0">
             <a data-toggle="collapse" data-parent="#accordion" href="#{{$id}}" aria-expanded="true" aria-controls="{{$id}}">{{ $e.args.new_tag }}</a>
            </div>
-           <div class="col-auto small">{{ $sum.Machines }} for {{ $sum.Cores }} cores {{ printf "%.2f" $sum.Mnps }} Mnps</div>
+           <div class="col-auto small">{{ $sum.Machines }} for {{ $sum.Cores }} cores {{ printf "%.1f" $sum.Mnps }} Mnps</div>
           </div>
          </div>
          <div id="{{$id}}" class="collapse" role="tabpanel" aria-labelledby="heading{{$i}}">
@@ -48,7 +48,7 @@
               <td><div class="flag flag-{{.flag}}" style="display:inline-block"></div></td>
               <td>{{ .info.uname }}</td>
               <td>{{ .info.concurrency }}</td>
-              <td>{{ printf "%.2f" .mnps }}</td>
+              <td>{{ printf "%.1f" .mnps }}</td>
              </tr>
             {{ end }}
             </tbody>

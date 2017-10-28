@@ -6,8 +6,7 @@
     <div id="machinesContainer"></div>
     {{ template "navbar" . }}
     <div class="container-fluid">
-      <div class="row no-gutters">
-        {{ template "sidebar" }}
+      <div class="row">
         {{ template "content" . }}
       </div>
     </div>
@@ -24,7 +23,8 @@
     <link rel="icon" href="https://getbootstrap.com/favicon.ico">
     <title>FT2</title>
     <!-- Bootstrap core CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css"
+          integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
     <!-- Custom styles for this template -->
     <link href="/static/dashboard.css" rel="stylesheet">
     <link href="/static/flags.css" rel="stylesheet">
@@ -33,85 +33,31 @@
 {{ end }}
 
 {{ define "navbar" }}
-    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-      <a class="navbar-brand" href="/dashboard/">FT2</a>
-      <button class="navbar-toggler d-lg-none" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
+    <nav class="navbar navbar-dark fixed-top bg-dark">
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+              aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+       <span class="navbar-toggler-icon"></span>
       </button>
-      <div class="collapse navbar-collapse" id="navbarsExampleDefault">
-        <ul class="navbar-nav mr-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="/dashboard/">Settings</a>
-          </li>
-          <li class="nav-item">
-          {{if .Username}}
-            <a class="nav-link" href="/logout">Logout ({{.Username}})</a>
-          {{else}}
-            <a class="nav-link" href="/login">Login</a>
-          {{end}}
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/dashboard/">Help</a>
-          </li>
-        </ul>
-        <form class="form-inline mt-2 mt-md-0">
-          <input class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search">
-          <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-        </form>
+      <span class="navbar-brand mr-auto ml-3">FT2</span>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+       <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+         <a class="nav-link" href="#">Home</a>
+        </li>
+        <li class="nav-item">
+         <a class="nav-link" href="#">Link</a>
+        </li>
+       </ul>
       </div>
-    </nav>
-{{ end }}
-
-{{ define "sidebar" }}
-        <nav class="col-sm-2 col-md-1 d-none d-sm-block bg-light sidebar">
-          <ul class="nav nav-pills flex-column">
-            <li class="nav-item">
-              <a class="nav-link active" href="/dashboard/">Overview <span class="sr-only">(current)</span></a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/dashboard/">Greens</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/dashboard/">New</a>
-            </li>
-          </ul>
-
-          <ul class="nav nav-pills flex-column">
-            <li class="nav-item">
-              <a class="nav-link" href="/dashboard/">Users</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/dashboard/">Top Month</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/dashboard/">Actions</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="https://github.com/glinscott/fishtest/wiki" target="_blank">Wiki</a>
-            </li>
-          </ul>
-
-          <ul class="nav nav-pills flex-column">
-            <li class="nav-item">
-              <a class="nav-link" href="https://github.com/official-stockfish/Stockfish" target="_blank">GitHub</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="https://groups.google.com/forum/?fromgroups=#!forum/fishcooking" target="_blank">Forum</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="https://groups.google.com/forum/?fromgroups=#!forum/fishcooking_results" target="_blank">History</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="https://hxim.github.io/Stockfish-Evaluation-Guide/" target="_blank">Eval Guide</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/dashboard/">Regressions</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="http://abrok.eu/stockfish/" target="_blank">Compiles</a>
-            </li>
-          </ul>
-        </nav>
+      {{if .Username}}
+      <span class="navbar-text text-primary mx-2">{{.Username}}</span>
+      <a href="/logout"><i class="fa fa-sign-out fa-1x text-secondary" aria-hidden="true"></i></a>
+      {{else}}
+      <span class="navbar-text text-secondary mx-2">Sign In</span>
+      <a href="/login"><i class="fa fa-github fa-2x text-secondary" aria-hidden="true"></i></a>
+      {{end}}
+  </nav>
+</div>
 {{ end }}
 
 {{ define "javascripts" }}
