@@ -6,6 +6,7 @@ var infScroll = new InfiniteScroll('#infinitetable', {
   },
   responseType: 'text',
   history: 'false',
+  scrollThreshold: 1000,
 });
 
 infScroll.on('load', function (response) {

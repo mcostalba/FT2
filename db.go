@@ -26,11 +26,36 @@ var (
 // Global visibility: our API
 func (d *DBSession) Runs(ofs, limit int, results *DBResults) error {
 
+	var finishedRuns []bson.M
+	var err error
+
+	// Setup conditions to load only needed data.
+	// FIXME We should use a Pipe() here, but Fishtest MongoDB version is 2.4.4
+	// and aggregations are still too basic, we need at least 3.2
 	notDeleted := bson.M{"deleted": bson.M{"$ne": 1}}
-	stateAndTime := []string{"finished", "-last_updated", "-start_time"}
+	finished := bson.M{"$and": []bson.M{notDeleted, bson.M{"finished": true}}}
+	active := bson.M{"$and": []bson.M{notDeleted, bson.M{"finished": false}}}
+	noSpsa := bson.M{"args.spsa.param_history": 0, "args.spsa.params": 0}
+	noSpsaNoTasks := bson.M{"args.spsa.param_history": 0, "args.spsa.params": 0, "tasks": bson.M{"$slice": 0}}
+	onTime := []string{"-last_updated", "-start_time"}
 
 	c := d.s.DB(dbname).C("runs")
-	return c.Find(notDeleted).Sort(stateAndTime...).Skip(ofs).Limit(limit).All(&results.M)
+
+	// We need task information for active runs but not for finished runs, so run a full query for page 0,
+	// for all other pages just count number of active runs, to consistently adjust ofs and limit.
+	if ofs == 0 {
+		err = c.Find(active).Select(noSpsa).Sort(onTime...).All(&results.M)
+		limit -= len(results.M)
+	} else {
+		n, _ := c.Find(active).Select(bson.M{"_id": 1}).Count()
+		ofs -= n
+	}
+	if err != nil {
+		return err
+	}
+	err = c.Find(finished).Select(noSpsaNoTasks).Sort(onTime...).Skip(ofs).Limit(limit).All(&finishedRuns)
+	results.M = append(results.M, finishedRuns...)
+	return err
 }
 
 func (d *DBSession) Users(limit int, results *DBResults) error {
@@ -61,7 +86,6 @@ func DialDB() {
 	if err != nil {
 		log.Fatal("Cannot dial mongo ", err)
 	}
-
 	session.SetMode(mgo.Monotonic, true)
 	masterDBSession.s = session
 
@@ -73,15 +97,21 @@ func DialDB() {
 			cnt++
 		}
 	}
-
 	if cnt != 2 {
 		log.Fatal("Cannot find expected collections")
 	}
-
-	// Ensure an index on 'runs' collection to speed up sorting
+	// Ensure an index on 'runs' collection to speed up matching and sorting
 	oneDay, _ := time.ParseDuration("24h")
-	index := mgo.Index{
-		Key:         []string{"finished", "-last_updated", "-start_time"},
+	index1 := mgo.Index{
+		Key:         []string{"deleted", "finished"},
+		Unique:      false,
+		DropDups:    false,
+		Background:  true,
+		Sparse:      false,
+		ExpireAfter: oneDay, // FIXME remove when in production
+	}
+	index2 := mgo.Index{
+		Key:         []string{"-last_updated", "-start_time"},
 		Unique:      false,
 		DropDups:    false,
 		Background:  true,
@@ -89,11 +119,13 @@ func DialDB() {
 		ExpireAfter: oneDay, // FIXME remove when in production
 	}
 	c := session.DB(dbname).C("runs")
-	err = c.EnsureIndex(index)
+	err = c.EnsureIndex(index1)
+	if err == nil {
+		err = c.EnsureIndex(index2)
+	}
 	if err != nil {
 		log.Fatal("Error while creating an index on 'runs': %s", err)
 	}
-
 	log.Println("DB connected!")
 }
 
