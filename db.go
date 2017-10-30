@@ -4,7 +4,9 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"log"
+	"net/url"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -23,23 +25,45 @@ var (
 	dbname          = os.Getenv("dbname")
 )
 
+func parseFilter(params url.Values) bson.M {
+
+	match := bson.M{"deleted": bson.M{"$ne": 1}}
+
+	username := params.Get("username")
+
+	if username != "" {
+		match["args.username"] = username
+	}
+	return match
+}
+
 // Global visibility: our API
-func (d *DBSession) Runs(ofs, limit int, results *DBResults) error {
+func (d *DBSession) Runs(params url.Values, results *DBResults) error {
 
-	// Setup conditions to limit data to load
-	notDeleted := bson.M{"deleted": bson.M{"$ne": 1}}
-	noSpsaNoTasks := bson.M{"args.spsa.param_history": 0, "args.spsa.params": 0, "tasks": bson.M{"$slice": 0}}
-	stateAndTime := []string{"finished", "-last_updated", "-start_time"}
-
-	c := d.s.DB(dbname).C("runs")
-	err := c.Find(notDeleted).Select(noSpsaNoTasks).Sort(stateAndTime...).Skip(ofs).Limit(limit).All(&results.M)
-	if err != nil || ofs > 0 {
+	limit, _ := strconv.Atoi(params.Get("limit"))
+	ofs, err := strconv.Atoi(params.Get("page"))
+	ofs *= limit
+	if err != nil {
 		return err
 	}
 
-	// For page 0 run another query to retrieve active tasks, used by machines view.
-	// A single Pipe() could ideally get all the results in one go, but Fishtest
-	// MongoDB version is an old and quite limited 2.4
+	// Setup conditions to limit data and to sort results
+	noSpsaNoTasks := bson.M{"args.spsa.param_history": 0, "args.spsa.params": 0, "tasks": bson.M{"$slice": 0}}
+	stateAndTime := []string{"finished", "-last_updated", "-start_time"}
+
+	match := parseFilter(params)
+
+	c := d.s.DB(dbname).C("runs")
+	err = c.Find(match).Select(noSpsaNoTasks).Sort(stateAndTime...).Skip(ofs).Limit(limit).All(&results.M)
+
+	// In case all runs are finished, we can just return. Otherwise load
+	// active tasks, used by machines view. Note that 'finished' is sorted.
+	if err != nil || len(results.M) == 0 || results.M[0]["finished"].(bool) {
+		return err
+	}
+
+	// We could ideally get all the runs and active tasks in one go, but
+	// Fishtest MongoDB version is an old and quite limited 2.4
 	getActiveTasks := []bson.M{
 		bson.M{"$match": bson.M{"finished": false}},
 		bson.M{"$match": bson.M{"deleted": bson.M{"$ne": 1}}},
@@ -69,6 +93,7 @@ func (d *DBSession) Runs(ofs, limit int, results *DBResults) error {
 			}
 		}
 	}
+	params.Set("machines", "load")
 	return err
 }
 
@@ -115,31 +140,16 @@ func DialDB() {
 		log.Fatal("Cannot find expected collections")
 	}
 	// Ensure an index on 'runs' collection to speed up matching and sorting
-	oneDay, _ := time.ParseDuration("24h")
-	index1 := mgo.Index{
-		Key:         []string{"deleted", "finished"},
-		Unique:      false,
-		DropDups:    false,
-		Background:  true,
-		Sparse:      false,
-		ExpireAfter: oneDay, // FIXME remove when in production
-	}
-	index2 := mgo.Index{
-		Key:         []string{"finished", "-last_updated", "-start_time"},
-		Unique:      false,
-		DropDups:    false,
-		Background:  true,
-		Sparse:      false,
-		ExpireAfter: oneDay, // FIXME remove when in production
-	}
+	oneDay, _ := time.ParseDuration("24h") // FIXME remove when in production
+	index := mgo.Index{Background: true, ExpireAfter: oneDay}
 	c := session.DB(dbname).C("runs")
-	err = c.EnsureIndex(index1)
-	if err == nil {
-		err = c.EnsureIndex(index2)
-	}
-	if err != nil {
-		log.Fatal("Error while creating an index on 'runs': %s", err)
-	}
+	index.Key = []string{"deleted"}
+	c.EnsureIndex(index)
+	index.Key = []string{"finished", "-last_updated", "-start_time"}
+	c.EnsureIndex(index)
+	index.Key = []string{"args.username"}
+	c.EnsureIndex(index)
+
 	log.Println("DB connected!")
 }
 

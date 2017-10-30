@@ -40,7 +40,7 @@
       </button>
       <span class="navbar-brand mr-auto ml-3">FT2</span>
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
-       <ul class="navbar-nav mr-auto">
+       <ul class="navbar-nav">
         <li class="nav-item active">
          <a class="nav-link" href="#">Home</a>
         </li>
@@ -49,6 +49,10 @@
         </li>
        </ul>
       </div>
+      <div><i id="filtericon" class="fa fa-filter fa-1x text-secondary" style="color:#ff9933" onclick="toggleFilter()" aria-hidden="true"></i></div>
+      <span class="navbar-text mx-2"></span>
+      <span class="navbar-text mx-5"></span>
+      <span class="navbar-text mx-5"></span>
       {{if .Username}}
       <span class="navbar-text text-primary mx-2">{{.Username}}</span>
       <a href="/logout"><i class="fa fa-sign-out fa-1x text-secondary" aria-hidden="true"></i></a>

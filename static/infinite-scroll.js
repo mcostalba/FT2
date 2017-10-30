@@ -1,15 +1,17 @@
 var chart = {};
+var view = { page: 0, filter: "", backup: {} }
 
 var infScroll = new InfiniteScroll('#infinitetable', {
   path: function () {
-    return '/get_runs/?page=' + this.loadCount;
+    return '/get_runs/?page=' + view.page + view.filter;
   },
   responseType: 'text',
   history: 'false',
-  scrollThreshold: 1000,
+  scrollThreshold: 800,
 });
 
 infScroll.on('load', function (response) {
+  view.page++;
   const r = response.split("!-- End of machines --");
   infinitetable.insertAdjacentHTML('beforeend', r[r.length - 1]);
   if (r.length > 1) {
@@ -18,6 +20,27 @@ infScroll.on('load', function (response) {
     google.charts.setOnLoadCallback(setupGauges);
   }
 });
+
+function toggleFilter(username) {
+
+  if (!view.filter && username) {
+    view.backup.page = view.page
+    view.backup.scroll = $(window).scrollTop();
+    view.filter = '&username=' + username;
+    view.page = 0;
+    infScroll.loadNextPage();
+    filtericon.classList.remove('text-secondary');
+    view.backup.node = infinitetable.cloneNode(true);
+    infinitetable.innerHTML = "";
+  } else if (view.filter) {
+    view.filter = "";
+    view.page = view.backup.page;
+    filtericon.classList.add('text-secondary');
+    infinitetable.parentNode.replaceChild(view.backup.node, infinitetable);
+    $(window).scrollTop(view.backup.scroll);
+    view.backup.node = null;
+  }
+}
 
 function showMachines(collapseId) {
   $('#' + collapseId).collapse('show');

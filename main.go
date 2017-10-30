@@ -5,12 +5,12 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"strconv"
+	"net/url"
 )
 
 type Page struct {
 	Username string
-	PageNum  int
+	Params   url.Values
 	Data     DBResults
 	Fmt      FmtFunc // Trick to call formatting functions from inside templates
 }
@@ -26,17 +26,14 @@ var (
 
 func handleGetRuns(w http.ResponseWriter, r *http.Request) {
 
-	p := r.URL.Query().Get("page")
-	ofs, err := strconv.Atoi(p)
-	if err != nil {
-		return
-	}
-
 	db := DB()
 	defer db.Close()
-	page := Page{PageNum: ofs}
 
-	err = db.Runs(ofs*50, 50, &page.Data)
+	var page Page
+	page.Params = r.URL.Query()
+	page.Params.Set("limit", "50")
+
+	err := db.Runs(page.Params, &page.Data)
 	if err != nil {
 		log.Printf("RunQuery : ERROR : %s\n", err)
 	}
