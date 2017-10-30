@@ -26,35 +26,49 @@ var (
 // Global visibility: our API
 func (d *DBSession) Runs(ofs, limit int, results *DBResults) error {
 
-	var finishedRuns []bson.M
-	var err error
-
-	// Setup conditions to load only needed data.
-	// FIXME We should use a Pipe() here, but Fishtest MongoDB version is 2.4.4
-	// and aggregations are still too basic, we need at least 3.2
+	// Setup conditions to limit data to load
 	notDeleted := bson.M{"deleted": bson.M{"$ne": 1}}
-	finished := bson.M{"$and": []bson.M{notDeleted, bson.M{"finished": true}}}
-	active := bson.M{"$and": []bson.M{notDeleted, bson.M{"finished": false}}}
-	noSpsa := bson.M{"args.spsa.param_history": 0, "args.spsa.params": 0}
 	noSpsaNoTasks := bson.M{"args.spsa.param_history": 0, "args.spsa.params": 0, "tasks": bson.M{"$slice": 0}}
-	onTime := []string{"-last_updated", "-start_time"}
+	stateAndTime := []string{"finished", "-last_updated", "-start_time"}
 
 	c := d.s.DB(dbname).C("runs")
-
-	// We need task information for active runs but not for finished runs, so run a full query for page 0,
-	// for all other pages just count number of active runs, to consistently adjust ofs and limit.
-	if ofs == 0 {
-		err = c.Find(active).Select(noSpsa).Sort(onTime...).All(&results.M)
-		limit -= len(results.M)
-	} else {
-		n, _ := c.Find(active).Select(bson.M{"_id": 1}).Count()
-		ofs -= n
+	err := c.Find(notDeleted).Select(noSpsaNoTasks).Sort(stateAndTime...).Skip(ofs).Limit(limit).All(&results.M)
+	if err != nil || ofs > 0 {
+		return err
 	}
+
+	// For page 0 run another query to retrieve active tasks, used by machines view.
+	// A single Pipe() could ideally get all the results in one go, but Fishtest
+	// MongoDB version is an old and quite limited 2.4
+	getActiveTasks := []bson.M{
+		bson.M{"$match": bson.M{"finished": false}},
+		bson.M{"$match": bson.M{"deleted": bson.M{"$ne": 1}}},
+
+		bson.M{"$project": bson.M{"_id": 1, "tasks": 1}},
+
+		bson.M{"$unwind": "$tasks"},
+		bson.M{"$match": bson.M{"tasks.active": true}},
+		bson.M{"$group": bson.M{"_id": "$_id",
+			"tasks":   bson.M{"$push": "$tasks"},
+			"workers": bson.M{"$sum": 1}}},
+	}
+	var activeTasks []bson.M
+	err = c.Pipe(getActiveTasks).All(&activeTasks)
 	if err != nil {
 		return err
 	}
-	err = c.Find(finished).Select(noSpsaNoTasks).Sort(onTime...).Skip(ofs).Limit(limit).All(&finishedRuns)
-	results.M = append(results.M, finishedRuns...)
+
+	// Re-add the active tasks into active runs
+	for i := range activeTasks {
+		id := activeTasks[i]["_id"].(bson.ObjectId)
+		for j := range results.M {
+			if results.M[j]["_id"] == id {
+				results.M[j]["tasks"] = activeTasks[i]["tasks"]
+				results.M[j]["workers"] = activeTasks[i]["workers"]
+				break
+			}
+		}
+	}
 	return err
 }
 
@@ -111,7 +125,7 @@ func DialDB() {
 		ExpireAfter: oneDay, // FIXME remove when in production
 	}
 	index2 := mgo.Index{
-		Key:         []string{"-last_updated", "-start_time"},
+		Key:         []string{"finished", "-last_updated", "-start_time"},
 		Unique:      false,
 		DropDups:    false,
 		Background:  true,

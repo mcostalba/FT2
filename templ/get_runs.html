@@ -3,7 +3,7 @@
       {{ template "machines" . }}
     {{ end }}
     {{ range .Data.M }}
-    {{ $c := $.Fmt.Led .finished .tasks }}
+    {{ $c := $.Fmt.Led .finished .workers }}
     {{ $diff := printf "%.7s...%.7s" .args.resolved_base .args.resolved_new }}
     {{ $elo := $.Fmt.Elo .results .args.tc .args.threads .args.sprt .args.spsa .results_info }}
     <tr>
