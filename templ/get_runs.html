@@ -1,6 +1,7 @@
 {{ define "layout" }}
     {{ $machines := .Params.Get "machines" }}
     {{ $filter := .Params.Get "username" }}
+    {{ $eof := .Params.Get "eof" }}
     {{ if eq $machines "load" }}
       {{ template "machines" . }}
     {{ end }}
@@ -16,9 +17,9 @@
          <a class="small" href="{{.args.tests_repo}}/compare/{{$diff}}" target="_blank">{{ printf " %.4s" .args.resolved_new }}</i></a>
      </td>
      {{ if eq .args.username $filter }}
-     <td><a href='javascript:void(0)' onclick="toggleFilter({{ .args.username }})" style="color:#ff9933">{{ .args.username }}</a></td>
+     <td><a href='javascript:void(0)' onclick="setFilter({{ .args.username }})" style="color:#ff9933">{{ .args.username }}</a></td>
      {{ else }}
-     <td><a href='javascript:void(0)' onclick="toggleFilter({{ .args.username }})">{{ .args.username }}</a></td>
+     <td><a href='javascript:void(0)' onclick="setFilter({{ .args.username }})">{{ .args.username }}</a></td>
      {{ end }}
      <td><div class="card px-1 py-1" style="background-color:{{ $elo.Color }}; border-color:{{ $elo.Border }}">
          <small class="card-subtitle" style="white-space:pre">{{ $elo.Info }}</small>
@@ -28,5 +29,8 @@
 
      <td>{{ $.Fmt.UnescapeURL .args.info }}</td>
     </tr>
+    {{ end }}
+    {{ if eq $eof "true" }}
+    <div id="end_of_rows"></div>
     {{ end }}
 {{ end }}

@@ -1,5 +1,5 @@
 var chart = {};
-var view = { page: 0, filter: "", backup: {} }
+var view = { page: 0, filter: "", eof: false, backup: {} };
 
 var infScroll = new InfiniteScroll('#infinitetable', {
   path: function () {
@@ -7,38 +7,57 @@ var infScroll = new InfiniteScroll('#infinitetable', {
   },
   responseType: 'text',
   history: 'false',
-  scrollThreshold: 800,
+  checkLastPage: 'false',
+  scrollThreshold: 400,
 });
 
 infScroll.on('load', function (response) {
   view.page++;
   const r = response.split("!-- End of machines --");
-  infinitetable.insertAdjacentHTML('beforeend', r[r.length - 1]);
+  const rows = r[r.length - 1];
   if (r.length > 1) {
     machinesContainer.innerHTML = r[0];
     google.charts.load('current', { 'packages': ['gauge'] });
     google.charts.setOnLoadCallback(setupGauges);
   }
+  infinitetable.insertAdjacentHTML('beforeend', rows);
+  setEOF(end_of_rows !== null);
 });
 
-function toggleFilter(username) {
+function setEOF(eof) {
+
+  view.eof = eof;
+  infScroll.options.loadOnScroll = !view.eof;
+  if (view.eof)
+    $("#waitingicon").hide();
+  else
+    $("#waitingicon").show();
+}
+
+function setFilter(username) {
 
   if (!view.filter && username) {
-    view.backup.page = view.page
+    view.backup.page = view.page;
     view.backup.scroll = $(window).scrollTop();
+    view.backup.eof = view.eof;
     view.filter = '&username=' + username;
     view.page = 0;
+    setEOF(false);
     infScroll.loadNextPage();
     filtericon.classList.remove('text-secondary');
-    view.backup.node = infinitetable.cloneNode(true);
+    view.backup.machines = machinesContainer.cloneNode(true);
+    view.backup.table = infinitetable.innerHTML;
     infinitetable.innerHTML = "";
   } else if (view.filter) {
     view.filter = "";
     view.page = view.backup.page;
+    setEOF(view.backup.eof);
     filtericon.classList.add('text-secondary');
-    infinitetable.parentNode.replaceChild(view.backup.node, infinitetable);
+    infinitetable.innerHTML = view.backup.table;
+    machinesContainer.parentNode.replaceChild(view.backup.machines, machinesContainer);
     $(window).scrollTop(view.backup.scroll);
-    view.backup.node = null;
+    view.backup.table = null;
+    view.backup.machines = null;
   }
 }
 

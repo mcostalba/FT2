@@ -55,10 +55,17 @@ func (d *DBSession) Runs(params url.Values, results *DBResults) error {
 
 	c := d.s.DB(dbname).C("runs")
 	err = c.Find(match).Select(noSpsaNoTasks).Sort(stateAndTime...).Skip(ofs).Limit(limit).All(&results.M)
+	if err != nil {
+		return err
+	}
+
+	if len(results.M) < limit {
+		params.Set("eof", "true")
+	}
 
 	// In case all runs are finished, we can just return. Otherwise load
 	// active tasks, used by machines view. Note that 'finished' is sorted.
-	if err != nil || len(results.M) == 0 || results.M[0]["finished"].(bool) {
+	if len(results.M) == 0 || results.M[0]["finished"].(bool) {
 		return err
 	}
 
