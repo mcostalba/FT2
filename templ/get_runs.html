@@ -12,15 +12,15 @@
       {{ if $elo.Info }}
     <tr>
      <td><small style="color:{{ $c.Color }}"><i class="fa fa-circle" aria-hidden="true"></i><br>
-         <a href="#" onclick="showMachines({{ printf "coll%.7s" ._id.Hex }})">{{ $c.Workers }}</a></small></td>
+         <a href="#" data-collapseid="{{ printf "coll%.7s" ._id.Hex }}">{{ $c.Workers }}</a></small></td>
 
      <td><a href="http://tests.stockfishchess.org/tests/view/{{ ._id.Hex }}">{{ printf "%.30s" .args.new_tag }}</a>
          <a class="small" href="{{.args.tests_repo}}/compare/{{$diff}}" target="_blank">{{ printf " %.4s" .args.resolved_new }}</i></a>
      </td>
      {{ if eq .args.username $filter }}
-     <td><a href='javascript:void(0)' onclick="setFilter({{ .args.username }})" style="color:#ff9933">{{ .args.username }}</a></td>
+     <td><a href='javascript:void(0)' data-filter='username' style="color:#ff9933">{{ .args.username }}</a></td>
      {{ else }}
-     <td><a href='javascript:void(0)' onclick="setFilter({{ .args.username }})">{{ .args.username }}</a></td>
+     <td><a href='javascript:void(0)' data-filter='username'>{{ .args.username }}</a></td>
      {{ end }}
      <td><div class="card px-1 py-1" style="background-color:{{ $elo.Color }}; border-color:{{ $elo.Border }}">
          <small class="card-subtitle" style="white-space:pre">{{ $elo.Info }}</small>
@@ -33,6 +33,6 @@
       {{ end }}
     {{ end }}
     {{ if eq $eof "true" }}
-    <div id="end_of_rows"></div>
+    <div id="end-of-rows"></div>
     {{ end }}
 {{ end }}
