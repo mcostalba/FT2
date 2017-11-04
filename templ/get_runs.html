@@ -6,9 +6,10 @@
       {{ template "machines" . }}
     {{ end }}
     {{ range .Data.M }}
-    {{ $c := $.Fmt.Led .finished .workers }}
-    {{ $diff := printf "%.7s...%.7s" .args.resolved_base .args.resolved_new }}
-    {{ $elo := $.Fmt.Elo .results .args.tc .args.threads .args.sprt .args.spsa .results_info }}
+      {{ $c := $.Fmt.Led .finished .workers }}
+      {{ $diff := printf "%.7s...%.7s" .args.resolved_base .args.resolved_new }}
+      {{ $elo := $.Fmt.Elo .finished .results .args .results_info }}
+      {{ if $elo.Info }}
     <tr>
      <td><small style="color:{{ $c.Color }}"><i class="fa fa-circle" aria-hidden="true"></i><br>
          <a href="#" onclick="showMachines({{ printf "coll%.7s" ._id.Hex }})">{{ $c.Workers }}</a></small></td>
@@ -29,6 +30,7 @@
 
      <td>{{ $.Fmt.UnescapeURL .args.info }}</td>
     </tr>
+      {{ end }}
     {{ end }}
     {{ if eq $eof "true" }}
     <div id="end_of_rows"></div>

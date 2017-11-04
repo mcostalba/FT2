@@ -62,16 +62,25 @@ func (_ FmtFunc) Led(finished bool, workers interface{}) bson.M {
 }
 
 // Compute ELO and SPRT stats of the test
-func (_ FmtFunc) Elo(results bson.M, tc string, threads int, sprt, spsa, results_info interface{}) bson.M {
+func (_ FmtFunc) Elo(finished bool, results, args bson.M, results_info interface{}) bson.M {
 
 	colorMap := map[string](string){"#FF6A6A": cRed, "yellow": cYellow, "#44EB44": cGreen}
-	var info, crashes, color, border string
+	var info, crashes, color, border, games string
+
+	tc := args["tc"].(string)
+	threads := args["threads"].(int)
+	num_games := args["num_games"].(int)
+	sprt, _ := args["sprt"]
+	spsa, _ := args["spsa"]
 
 	if strings.HasPrefix(tc, "60") { // LTC
 		border = cGray
 	}
-
 	w, l, d := results["wins"].(int), results["losses"].(int), results["draws"].(int)
+
+	if finished && w+l+d == 0 {
+		return bson.M{}
+	}
 	c, ok1 := results["crashes"].(int) // New tests don't have this info
 	t, ok2 := results["time_losses"].(int)
 
@@ -105,9 +114,10 @@ func (_ FmtFunc) Elo(results bson.M, tc string, threads int, sprt, spsa, results
 	} else {
 		el, elo95, los := Compute_elo(w, l, d)
 		info = fmt.Sprintf("ELO: %.2f +-%.2f LOS: %.2f%%", el, elo95, los)
+		games = fmt.Sprintf("/%v", num_games)
 	}
-	s := "%s tc %s th %v\nTot: %v W: %v L: %v D: %v %s"
-	info = fmt.Sprintf(s, info, tc, threads, w+l+d, w, l, d, crashes)
+	s := "%s tc %s th %v\nTot: %v%s W: %v L: %v D: %v %s"
+	info = fmt.Sprintf(s, info, tc, threads, w+l+d, games, w, l, d, crashes)
 	return bson.M{"Color": color, "Border": border, "Info": info}
 }
 

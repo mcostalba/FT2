@@ -21,7 +21,8 @@ infScroll.on('load', function (response) {
     google.charts.setOnLoadCallback(setupGauges)
   }
   infinitetable.insertAdjacentHTML('beforeend', rows)
-  setEOF(end_of_rows !== null)
+  const eof = document.getElementById('end_of_rows')
+  setEOF(eof !== null)
 })
 
 function setEOF (eof) {
