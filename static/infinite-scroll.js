@@ -16,7 +16,7 @@ infScroll.on('load', function (response) {
   const r = response.split('!-- End of machines --')
   const rows = r[r.length - 1]
   if (r.length > 1) {
-    machinesContainer.innerHTML = r[0]
+    machines.innerHTML = r[0]
     google.charts.load('current', { 'packages': ['gauge'] })
     google.charts.setOnLoadCallback(setupGauges)
   }
@@ -41,7 +41,7 @@ function setFilter (username) {
     setEOF(false)
     infScroll.loadNextPage()
     filtericon.classList.remove('text-secondary')
-    view.backup.machines = machinesContainer.cloneNode(true)
+    view.backup.machines = machines.innerHTML
     view.backup.table = infinitetable.innerHTML
     infinitetable.innerHTML = ''
   } else if (view.filter) {
@@ -50,7 +50,7 @@ function setFilter (username) {
     setEOF(view.backup.eof)
     filtericon.classList.add('text-secondary')
     infinitetable.innerHTML = view.backup.table
-    machinesContainer.parentNode.replaceChild(view.backup.machines, machinesContainer)
+    machines.innerHTML = view.backup.machines
     $(window).scrollTop(view.backup.scroll)
     view.backup.table = null
     view.backup.machines = null
