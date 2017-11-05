@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/alexedwards/scs"
+	"golang.org/x/net/websocket"
 	"html/template"
 	"log"
 	"net/http"
@@ -23,6 +24,32 @@ var (
 	runsTemplate    = template.Must(template.ParseFiles("templ/runs.html", "templ/base.html"))
 	getRunsTemplate = template.Must(template.ParseFiles("templ/get_runs.html", "templ/machines.html"))
 )
+
+func handleRunsWS(ws *websocket.Conn) {
+
+	defer ws.Close()
+	c, ok := NewConnection()
+	if !ok {
+		return
+	}
+	defer c.Close()
+
+	for msg := range c.ch {
+		err := websocket.Message.Send(ws, msg)
+		if err != nil {
+			log.Println("Can't send, closing websocket")
+			break
+		}
+		// To detect browser disconnection, we try to read a 'pong' signal, sent
+		// by the client after receiving our data.
+		var pong string
+		err = websocket.Message.Receive(ws, &pong)
+		if err != nil {
+			log.Println("Can't read, closing websocket")
+			break
+		}
+	}
+}
 
 func handleGetRuns(w http.ResponseWriter, r *http.Request) {
 
@@ -66,6 +93,11 @@ func main() {
 	mux.HandleFunc("/login/", HandleGitHubLogin)
 	mux.HandleFunc("/logout/", HandleGitHubLogout)
 	mux.HandleFunc("/github_oauth_cb", HandleGitHubCallback) // Note missing trailing slash!
+
+	// Handle for websockets
+	mux.Handle("/runs_ws/", websocket.Handler(handleRunsWS))
+	StartBroadcasting()
+	defer StopBroadcasting()
 
 	mux.HandleFunc("/", handleRuns)
 	mux.HandleFunc("/get_runs/", handleGetRuns)

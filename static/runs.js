@@ -27,6 +27,7 @@ infScroll.on('load', function (response) {
   document.getElementById('infinite-table').insertAdjacentHTML('beforeend', rows)
   const eof = document.getElementById('end-of-rows')
   setEOF(eof !== null)
+  startWebSocketOnce()
 })
 
 infScroll.loadNextPage() // load initial page
@@ -63,3 +64,28 @@ function setFilter (username) {
     view.backup.machines = null
   }
 }
+
+var startWebSocketOnce = (function () {
+  var executed = false
+  return function () {
+    if (!executed) {
+      executed = true
+      var parser = document.createElement('a')
+      parser.href = window.location.href
+      var wsuri = 'wss://' + parser.hostname + '/runs_ws/'
+
+      var sock = new WebSocket(wsuri)
+
+      sock.onopen = function () {
+        console.log('connected to ' + wsuri)
+      }
+      sock.onclose = function (e) {
+        console.log('connection closed (' + e.code + ')')
+      }
+      sock.onmessage = function (e) {
+        console.log('message received: ' + e.data)
+        sock.send('pong')
+      }
+    }
+  }
+})()
