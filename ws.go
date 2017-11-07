@@ -1,6 +1,14 @@
 package main
 
 import (
+	"bytes"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
+	"html/template"
+	"log"
+	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -8,83 +16,147 @@ import (
 
 type Connection struct {
 	ch   chan string
-	id   int
 	open bool
 }
 
-var connections struct {
+var cache struct {
 	sync.Mutex
-	clients []*Connection
-	id      int
-	stop    bool
+	clients   []*Connection
+	stop      bool
+	template  *template.Template
+	page      []byte
+	pageDiff  string
+	signature string
+}
+
+func computeDiff(page []byte, sign string) (string, error) {
+
+	type Message struct {
+		SignOld string
+		SignNew string
+		Body    string
+	}
+	m := Message{cache.signature, sign, "ping"}
+	b, err := json.Marshal(&m)
+	return string(b), err
 }
 
 func dispatch() bool {
 
-	connections.Lock()
-	defer connections.Unlock()
+	cache.Lock()
+	defer cache.Unlock()
 
-	for i := len(connections.clients) - 1; i >= 0; i-- {
-
-		c := connections.clients[i]
-
-		if !c.open || connections.stop {
+	for i := len(cache.clients) - 1; i >= 0; i-- {
+		c := cache.clients[i]
+		if !c.open || cache.stop {
 			close(c.ch) // Force the ws handler to exit
-			l := len(connections.clients)
-			connections.clients[i] = connections.clients[l-1]
-			connections.clients = connections.clients[:l-1]
+			l := len(cache.clients)
+			cache.clients[i] = cache.clients[l-1]
+			cache.clients = cache.clients[:l-1]
 		} else {
-			c.ch <- strconv.Itoa(c.id)
+			c.ch <- cache.pageDiff
 		}
 	}
-	return !connections.stop
+	return !cache.stop
 }
 
-func StartBroadcasting() {
+func StartBroadcasting(template *template.Template) {
 
-	connections.Lock()
-	defer connections.Unlock()
-
-	connections.stop = false
-	connections.clients = make([]*Connection, 0, 1000)
+	cache.stop = false
+	cache.clients = make([]*Connection, 0, 1000)
+	cache.template = template
+	updateCachedPage()
 
 	go func() {
 		ticker := time.NewTicker(time.Second * 5)
 		for range ticker.C {
+			updateCachedPage()
 			if !dispatch() {
 				break
 			}
 		}
 	}()
+	log.Println("Broadcasting started")
 }
 
 func StopBroadcasting() {
 
-	connections.Lock()
-	defer connections.Unlock()
-	connections.stop = true
+	cache.Lock()
+	defer cache.Unlock()
+	cache.stop = true
 }
 
 func NewConnection() (*Connection, bool) {
 
-	connections.Lock()
-	defer connections.Unlock()
+	cache.Lock()
+	defer cache.Unlock()
 
-	if connections.stop {
+	if cache.stop {
 		return nil, false
 	}
 	c := new(Connection)
 	c.ch = make(chan string, 10)
 	c.open = true
-	c.id = connections.id
-	connections.id++
-	connections.clients = append(connections.clients, c)
+	cache.clients = append(cache.clients, c)
 	return c, true
 }
 
 func (c *Connection) Close() {
 
-	connections.Lock()
-	defer connections.Unlock()
+	cache.Lock()
+	defer cache.Unlock()
 	c.open = false
+}
+
+func GetCachedPage(w http.ResponseWriter, p *Page) bool {
+
+	page, err := strconv.Atoi(p.Params.Get("page"))
+	username := p.Params.Get("username")
+	if err != nil || page != 0 || username != "" {
+		return false
+	}
+	cache.Lock()
+	defer cache.Unlock()
+
+	w.Write(cache.page)
+	return true
+}
+
+func updateCachedPage() error {
+
+	db := DB()
+	defer db.Close()
+
+	page := Page{}
+	page.Params = url.Values{}
+	page.Params.Set("page", "0")
+	page.Params.Set("limit", "50")
+
+	b := make([]byte, 16)
+	rand.Read(b)
+	sign := hex.EncodeToString(b)
+	page.Params.Set("signature", sign)
+
+	err := db.Runs(page.Params, &page.Data)
+	if err != nil {
+		log.Printf("updateCachedTemplate: %s\n", err)
+		return err
+	}
+
+	buf := bytes.NewBuffer(make([]byte, 0, 256*1024))
+	cache.template.ExecuteTemplate(buf, "layout", &page)
+
+	diff, err := computeDiff(buf.Bytes(), sign)
+	if err != nil {
+		log.Printf("updateCachedTemplate: %s\n", err)
+		return err
+	}
+
+	cache.Lock()
+	defer cache.Unlock()
+
+	cache.page = buf.Bytes()
+	cache.pageDiff = diff
+	cache.signature = sign
+	return nil
 }

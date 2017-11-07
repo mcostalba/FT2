@@ -27,10 +27,37 @@ infScroll.on('load', function (response) {
   document.getElementById('infinite-table').insertAdjacentHTML('beforeend', rows)
   const eof = document.getElementById('end-of-rows')
   setEOF(eof !== null)
-  startWebSocketOnce()
 })
 
-infScroll.loadNextPage() // load initial page
+function startWebSocket () {
+  const parser = document.createElement('a')
+  parser.href = window.location.href
+  const wsuri = 'wss://' + parser.hostname + '/runs_ws/'
+
+  const sock = new WebSocket(wsuri)
+
+  sock.onopen = function () {
+    console.log('connected to ' + wsuri)
+  }
+  sock.onclose = function (e) {
+    console.log('connection closed (' + e.code + ')')
+  }
+  sock.onmessage = function (e) {
+    console.log('message received: ' + e.data)
+    sock.send('pong')
+    const elem = document.getElementById('page-signature')
+    if (elem === null) { return }
+    const update = JSON.parse(e.data)
+    const sign = elem.dataset.signature
+    if (sign !== update.SignOld) {
+      console.log('Wrong signature, closing')
+      sock.close()
+      return
+    }
+    elem.dataset.signature = update.SignNew
+    // Update data...
+  }
+}
 
 function setEOF (eof) {
   view.eof = eof
@@ -65,27 +92,5 @@ function setFilter (username) {
   }
 }
 
-var startWebSocketOnce = (function () {
-  var executed = false
-  return function () {
-    if (!executed) {
-      executed = true
-      var parser = document.createElement('a')
-      parser.href = window.location.href
-      var wsuri = 'wss://' + parser.hostname + '/runs_ws/'
-
-      var sock = new WebSocket(wsuri)
-
-      sock.onopen = function () {
-        console.log('connected to ' + wsuri)
-      }
-      sock.onclose = function (e) {
-        console.log('connection closed (' + e.code + ')')
-      }
-      sock.onmessage = function (e) {
-        console.log('message received: ' + e.data)
-        sock.send('pong')
-      }
-    }
-  }
-})()
+infScroll.loadNextPage() // Will start first page loading
+startWebSocket()

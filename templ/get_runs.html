@@ -1,4 +1,8 @@
 {{ define "layout" }}
+    {{ $sign := .Params.Get "signature" }}
+    {{ if $sign }}
+    <div id="page-signature" data-signature="{{$sign}}"></div>
+    {{ end }}
     {{ $machines := .Params.Get "machines" }}
     {{ $filter := .Params.Get "username" }}
     {{ $eof := .Params.Get "eof" }}

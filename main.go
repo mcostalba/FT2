@@ -60,11 +60,13 @@ func handleGetRuns(w http.ResponseWriter, r *http.Request) {
 	page.Params = r.URL.Query()
 	page.Params.Set("limit", "50")
 
+	if GetCachedPage(w, &page) {
+		return
+	}
 	err := db.Runs(page.Params, &page.Data)
 	if err != nil {
-		log.Printf("RunQuery : ERROR : %s\n", err)
+		log.Printf("RunQuery ERROR: %s\n", err)
 	}
-
 	getRunsTemplate.ExecuteTemplate(w, "layout", &page)
 }
 
@@ -83,6 +85,10 @@ func main() {
 	DialDB()
 	defer CloseDB()
 
+	// Setup and start caching and websocket service
+	StartBroadcasting(getRunsTemplate)
+	defer StopBroadcasting()
+
 	mux := http.NewServeMux()
 
 	// Serve static files
@@ -96,8 +102,6 @@ func main() {
 
 	// Handle for websockets
 	mux.Handle("/runs_ws/", websocket.Handler(handleRunsWS))
-	StartBroadcasting()
-	defer StopBroadcasting()
 
 	mux.HandleFunc("/", handleRuns)
 	mux.HandleFunc("/get_runs/", handleGetRuns)

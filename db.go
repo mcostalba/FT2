@@ -157,7 +157,7 @@ func DialDB() {
 	index.Key = []string{"args.username"}
 	c.EnsureIndex(index)
 
-	log.Println("DB connected!")
+	log.Println("DB connected")
 }
 
 func CloseDB() {
