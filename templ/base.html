@@ -4,6 +4,9 @@
   <head>{{ template "head" }}</head>
   <body>
 
+   <!-- Page signature for websocket update -->
+   <div id="page-signature" data-signature=""></div>
+
     <!-- Modal Machines view -->
     <div class="modal fade" id="machines" tabindex="-1" role="dialog" aria-labelledby="machinesTitle" aria-hidden="true">
      <div class="modal-dialog modal-lg" role="document">
@@ -80,6 +83,7 @@
       <span class="navbar-text mx-2"></span>
       <span class="navbar-text mx-5"></span>
       <span class="navbar-text mx-5"></span>
+      <div><i id="ws-connected-icon" class="fa fa-exchange fa-1x text-secondary mx-2" style="color:limegreen" aria-hidden="true"></i></div>
       {{if .Username}}
       <span class="navbar-text text-primary mx-2">{{.Username}}</span>
       <a href="/logout"><i class="fa fa-sign-out fa-1x text-secondary" aria-hidden="true"></i></a>

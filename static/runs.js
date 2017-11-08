@@ -27,6 +27,12 @@ infScroll.on('load', function (response) {
   document.getElementById('infinite-table').insertAdjacentHTML('beforeend', rows)
   const eof = document.getElementById('end-of-rows')
   setEOF(eof !== null)
+  const tmp = document.getElementById('page-signature-data')
+  if (tmp !== null) {
+    const elem = document.getElementById('page-signature')
+    elem.dataset.signature = tmp.dataset.signature
+    tmp.parentNode.removeChild(tmp); // Remove once has been saved in 'page-signature'
+  }
 })
 
 function startWebSocket () {
@@ -38,9 +44,11 @@ function startWebSocket () {
 
   sock.onopen = function () {
     console.log('connected to ' + wsuri)
+    document.getElementById('ws-connected-icon').classList.remove('text-secondary')
   }
   sock.onclose = function (e) {
     console.log('connection closed (' + e.code + ')')
+    document.getElementById('ws-connected-icon').classList.add('text-secondary')
   }
   sock.onmessage = function (e) {
     console.log('message received: ' + e.data)

@@ -88,15 +88,16 @@ func StopBroadcasting() {
 
 func NewConnection() (*Connection, bool) {
 
+	c := new(Connection)
+	c.ch = make(chan string, 10)
+	c.open = true
+
 	cache.Lock()
 	defer cache.Unlock()
 
 	if cache.stop {
 		return nil, false
 	}
-	c := new(Connection)
-	c.ch = make(chan string, 10)
-	c.open = true
 	cache.clients = append(cache.clients, c)
 	return c, true
 }
