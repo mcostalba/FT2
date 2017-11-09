@@ -53,12 +53,12 @@ type FmtFunc struct{}
 func (_ FmtFunc) Led(finished bool, workers interface{}) bson.M {
 
 	if finished {
-		return bson.M{"Color": "gray", "Workers": ""}
+		return bson.M{"LedColor": "gray", "Workers": ""}
 	}
 	if workers == nil {
-		return bson.M{"Color": "gold", "Workers": ""}
+		return bson.M{"LedColor": "gold", "Workers": ""}
 	}
-	return bson.M{"Color": "limegreen", "Workers": strconv.Itoa(workers.(int))}
+	return bson.M{"LedColor": "limegreen", "Workers": strconv.Itoa(workers.(int))}
 }
 
 // Compute ELO and SPRT stats of the test
@@ -118,7 +118,7 @@ func (_ FmtFunc) Elo(finished bool, results, args bson.M, results_info interface
 	}
 	s := "%s tc %s th %v\nTot: %v%s W: %v L: %v D: %v %s"
 	info = fmt.Sprintf(s, info, tc, threads, w+l+d, games, w, l, d, crashes)
-	return bson.M{"Color": color, "Border": border, "Info": info}
+	return bson.M{"BoxColor": color, "Border": border, "Info": info}
 }
 
 // Fancy formatting of time since test has been submitted

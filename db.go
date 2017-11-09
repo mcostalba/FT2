@@ -19,7 +19,6 @@ type (
 	}
 )
 
-// File scope visibility
 var (
 	masterDBSession DBSession
 	dbname          = os.Getenv("dbname")
@@ -37,7 +36,6 @@ func parseFilter(params url.Values) bson.M {
 	return match
 }
 
-// Global visibility: our API
 func (d *DBSession) Runs(params url.Values, results *DBResults) error {
 
 	limit, _ := strconv.Atoi(params.Get("limit"))

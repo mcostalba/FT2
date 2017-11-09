@@ -14,8 +14,8 @@
       {{ $diff := printf "%.7s...%.7s" .args.resolved_base .args.resolved_new }}
       {{ $elo := $.Fmt.Elo .finished .results .args .results_info }}
       {{ if $elo.Info }}
-    <tr>
-     <td><small style="color:{{ $c.Color }}"><i class="fa fa-circle" aria-hidden="true"></i><br>
+    <tr class="row{{ ._id.Hex }}">
+     <td><small style="color:{{ $c.LedColor }}"><i class="fa fa-circle" aria-hidden="true"></i><br>
          <a href="#" data-collapseid="{{ printf "coll%.7s" ._id.Hex }}">{{ $c.Workers }}</a></small></td>
 
      <td><a href="http://tests.stockfishchess.org/tests/view/{{ ._id.Hex }}">{{ printf "%.30s" .args.new_tag }}</a>
@@ -26,7 +26,7 @@
      {{ else }}
      <td><a href='javascript:void(0)' data-filter='username'>{{ .args.username }}</a></td>
      {{ end }}
-     <td><div class="card px-1 py-1" style="background-color:{{ $elo.Color }}; border-color:{{ $elo.Border }}">
+     <td><div class="card px-1 py-1" style="background-color:{{ $elo.BoxColor }}; border-color:{{ $elo.Border }}">
          <small class="card-subtitle" style="white-space:pre">{{ $elo.Info }}</small>
      </div></td>
 

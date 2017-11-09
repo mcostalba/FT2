@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"html/template"
+	"labix.org/v2/mgo/bson"
 	"log"
 	"net/http"
 	"net/url"
@@ -14,10 +15,20 @@ import (
 	"time"
 )
 
-type Connection struct {
-	ch   chan string
-	open bool
-}
+type (
+	Connection struct {
+		ch   chan string
+		open bool
+	}
+	diffItem struct {
+		Field string
+		Value string
+	}
+	diffEntry struct {
+		Id   bson.ObjectId
+		Item diffItem
+	}
+)
 
 var cache struct {
 	sync.Mutex
@@ -26,17 +37,56 @@ var cache struct {
 	template  *template.Template
 	page      []byte
 	pageDiff  string
+	pageDB    DBResults
 	signature string
 }
 
-func computeDiff(page []byte, sign string) (string, error) {
+func delta(id bson.ObjectId, ledNew, eloNew, n, o bson.M, diffList *[]diffEntry) {
+
+	var f FmtFunc
+	ledOld := f.Led(o["finished"].(bool), o["workers"])
+	eloOld := f.Elo(o["finished"].(bool), o["results"].(bson.M), o["args"].(bson.M), o["results_info"])
+
+	for key, vn := range ledNew {
+		if vo, ok := ledOld[key]; ok {
+			if vn.(string) != vo.(string) {
+				*diffList = append(*diffList, diffEntry{id, diffItem{key, vn.(string)}})
+			}
+		}
+	}
+	for key, vn := range eloNew {
+		if vo, ok := eloOld[key]; ok {
+			if vn.(string) != vo.(string) {
+				*diffList = append(*diffList, diffEntry{id, diffItem{key, vn.(string)}})
+			}
+		}
+	}
+}
+
+func computeDiff(page []byte, results DBResults, sign string) (string, error) {
 
 	type Message struct {
 		SignOld string
 		SignNew string
-		Body    string
+		Diff    []diffEntry
 	}
-	m := Message{cache.signature, sign, "ping"}
+	var f FmtFunc
+	diffList := make([]diffEntry, 0, 50)
+
+	for i := range results.M {
+		n := results.M[i]
+		newId := n["_id"].(bson.ObjectId)
+		ledNew := f.Led(n["finished"].(bool), n["workers"])
+		eloNew := f.Elo(n["finished"].(bool), n["results"].(bson.M), n["args"].(bson.M), n["results_info"])
+		for j := range cache.pageDB.M {
+			o := cache.pageDB.M[j]
+			oldId := o["_id"].(bson.ObjectId)
+			if oldId == newId {
+				delta(newId, ledNew, eloNew, n, o, &diffList)
+			}
+		}
+	}
+	m := Message{cache.signature, sign, diffList}
 	b, err := json.Marshal(&m)
 	return string(b), err
 }
@@ -147,7 +197,7 @@ func updateCachedPage() error {
 	buf := bytes.NewBuffer(make([]byte, 0, 256*1024))
 	cache.template.ExecuteTemplate(buf, "layout", &page)
 
-	diff, err := computeDiff(buf.Bytes(), sign)
+	diff, err := computeDiff(buf.Bytes(), page.Data, sign)
 	if err != nil {
 		log.Printf("updateCachedTemplate: %s\n", err)
 		return err
@@ -158,6 +208,7 @@ func updateCachedPage() error {
 
 	cache.page = buf.Bytes()
 	cache.pageDiff = diff
+	cache.pageDB = page.Data
 	cache.signature = sign
 	return nil
 }

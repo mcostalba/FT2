@@ -61,15 +61,48 @@ function startWebSocket () {
     sock.send('pong')
     const elem = document.getElementById('page-signature')
     if (elem === null) { return }
-    const update = JSON.parse(e.data)
+    const list = JSON.parse(e.data)
     const sign = elem.dataset.signature
-    if (sign !== update.SignOld) {
+    if (sign !== list.SignOld) {
       console.log('Wrong signature, closing')
       sock.close()
       return
     }
-    elem.dataset.signature = update.SignNew
-    // Update data...
+    elem.dataset.signature = list.SignNew
+    updateRows(list.Diff)
+  }
+}
+
+function updateRows (diff) {
+  for (let i = 0; i < diff.length; i++) {
+    let rows = document.getElementsByClassName('row' + diff[i].Id)
+    let item = diff[i].Item
+    for (let k = 0; k < rows.length; k++) {
+      switch (item.Field) {
+        case 'LedColor':
+          var target = rows[k].getElementsByTagName('small')[0]
+          target.style['color'] = item.Value
+          break
+        case 'Workers':
+          var target = rows[k].getElementsByTagName('a')[0]
+          target.innerHTML = item.Value
+          break
+        case 'BoxColor':
+          var target = rows[k].getElementsByClassName('card')[0]
+          target.style['background-color'] = item.Value
+          break
+        case 'Border':
+          var target = rows[k].getElementsByClassName('card')[0]
+          target.style['border-color'] = item.Value
+          break
+        case 'Info':
+          var target = rows[k].getElementsByClassName('card-subtitle')[0]
+          target.innerHTML = item.Value
+          break
+        default:
+          console.log('Unknown field ' + item.Field)
+      }
+    }
   }
 }
 
