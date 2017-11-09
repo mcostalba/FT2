@@ -1,4 +1,10 @@
-$('#infinite-table').on('click', 'a[data-collapseid]', function (event) {
+$('#infinite-table-0').on('click', 'a[data-collapseid]', function (event) {
+  var collapseId = event.target.dataset.collapseid
+  $('#' + collapseId).collapse('show')
+  $('#machines').modal()
+})
+
+$('#infinite-table-1').on('click', 'a[data-collapseid]', function (event) {
   var collapseId = event.target.dataset.collapseid
   $('#' + collapseId).collapse('show')
   $('#machines').modal()

@@ -1,15 +1,19 @@
 var view = { page: 0, filter: '', backup: {} }
 
-$('#infinite-table').on('click', 'a[data-filter]', function (event) {
+$('#infinite-table-0').on('click', 'a[data-filter]', function (event) {
   const username = event.target.innerText
   setFilter(username)
+})
+
+$('#infinite-table-1').on('click', 'a[data-filter]', function (event) {
+  setFilter('')
 })
 
 $('#filter-icon').on('click', function (event) {
   setFilter('')
 })
 
-var infScroll = new InfiniteScroll('#infinite-table', {
+var infScroll = new InfiniteScroll('#infinite-scroll-container', {
   path: function () {
     return '/get_runs/?page=' + view.page + view.filter
   },
@@ -21,17 +25,19 @@ var infScroll = new InfiniteScroll('#infinite-table', {
 
 infScroll.on('load', function (response) {
   view.page++
+  const id = (view.filter ? '1' : '0')
   const r = response.split('!-- End of machines --')
   if (r.length > 1) { document.getElementById('accordion').innerHTML = r[0] }
   const rows = r[r.length - 1]
-  document.getElementById('infinite-table').insertAdjacentHTML('beforeend', rows)
+  document.getElementById('infinite-table-' + id).insertAdjacentHTML('beforeend', rows)
   const eof = document.getElementById('end-of-rows')
   setEOF(eof !== null)
+  if (eof !== null) { eof.parentNode.removeChild(eof) }
   const tmp = document.getElementById('page-signature-data')
   if (tmp !== null) {
     const elem = document.getElementById('page-signature')
     elem.dataset.signature = tmp.dataset.signature
-    tmp.parentNode.removeChild(tmp); // Remove once has been saved in 'page-signature'
+    tmp.parentNode.removeChild(tmp) // Remove once has been saved in 'page-signature'
   }
 })
 
@@ -78,25 +84,24 @@ function setFilter (username) {
     view.backup.page = view.page
     view.backup.scroll = $(window).scrollTop()
     view.backup.eof = view.eof
+    view.backup.machines = document.getElementById('accordion').innerHTML
     view.filter = '&username=' + username
     view.page = 0
     setEOF(false)
     infScroll.loadNextPage()
     document.getElementById('filter-icon').classList.remove('text-secondary')
-    view.backup.machines = document.getElementById('accordion').innerHTML
-    const t = document.getElementById('infinite-table')
-    view.backup.table = t.innerHTML
-    t.innerHTML = ''
+    document.getElementById('infinite-table-0').style.display = 'none'
+    document.getElementById('infinite-table-1').style.display = 'block'
   } else if (view.filter) {
     view.filter = ''
     view.page = view.backup.page
     setEOF(view.backup.eof)
     document.getElementById('filter-icon').classList.add('text-secondary')
-    document.getElementById('infinite-table').innerHTML = view.backup.table
+    document.getElementById('infinite-table-1').style.display = 'none'
+    document.getElementById('infinite-table-0').style.display = 'block'
+    document.getElementById('infinite-table-1').innerHTML = ''
     document.getElementById('accordion').innerHTML = view.backup.machines
     $(window).scrollTop(view.backup.scroll)
-    view.backup.table = null
-    view.backup.machines = null
   }
 }
 
