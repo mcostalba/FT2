@@ -79,7 +79,10 @@ func (d *DBSession) Runs(params url.Values, results *DBResults) error {
 		bson.M{"$match": bson.M{"tasks.active": true}},
 		bson.M{"$group": bson.M{"_id": "$_id",
 			"tasks":   bson.M{"$push": "$tasks"},
-			"workers": bson.M{"$sum": 1}}},
+			"workers": bson.M{"$sum": 1},
+			"wins":    bson.M{"$sum": "$tasks.stats.wins"},
+			"losses":  bson.M{"$sum": "$tasks.stats.losses"},
+			"draws":   bson.M{"$sum": "$tasks.stats.draws"}}},
 	}
 	var activeTasks []bson.M
 	err = c.Pipe(getActiveTasks).All(&activeTasks)
@@ -94,6 +97,8 @@ func (d *DBSession) Runs(params url.Values, results *DBResults) error {
 			if results.M[j]["_id"] == id {
 				results.M[j]["tasks"] = activeTasks[i]["tasks"]
 				results.M[j]["workers"] = activeTasks[i]["workers"]
+				g := activeTasks[i]["wins"].(int) + activeTasks[i]["losses"].(int) + activeTasks[i]["draws"].(int)
+				results.M[j]["games"] = g
 				break
 			}
 		}

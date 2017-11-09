@@ -49,15 +49,16 @@ function startWebSocket () {
   const sock = new WebSocket(wsuri)
 
   sock.onopen = function () {
-    console.log('connected to ' + wsuri)
+    console.log('Socket: connected to ' + wsuri)
     document.getElementById('ws-connected-icon').classList.remove('text-secondary')
   }
   sock.onclose = function (e) {
-    console.log('connection closed (' + e.code + ')')
+    console.log('Socket: connection closed (' + e.code + ')')
     document.getElementById('ws-connected-icon').classList.add('text-secondary')
   }
   sock.onmessage = function (e) {
-    console.log('message received: ' + e.data)
+
+    console.log('Socket: received ' + e.data.length + ' bytes')
     sock.send('pong')
     const elem = document.getElementById('page-signature')
     if (elem === null) { return }
@@ -99,11 +100,24 @@ function updateRows (diff) {
           var target = rows[k].getElementsByClassName('card-subtitle')[0]
           target.innerHTML = item.Value
           break
+        case 'Games':
+          break
         default:
           console.log('Unknown field ' + item.Field)
       }
     }
+    // For each active task save the queue of the last games count ordered
+    // by most recent to oldest. It will be used to compute games per minute.
+    if (item.Field === 'Games') {
+      let games = document.getElementById('coll' + diff[i].Id.substring(0, 7))
+      games = games.getElementsByClassName('machines-table')[0]
+      let s = games.dataset.games
+      if (s) { s = s.split(' ') } else { s = [] }
+      s.unshift(item.Value)
+      games.dataset.games = s.slice(0, 20).join(' ')
+    }
   }
+  if ($('#machines').is(':visible')) { $('#machines').trigger('shown.bs.modal') }
 }
 
 function setEOF (eof) {

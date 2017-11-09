@@ -10,7 +10,7 @@
       {{ template "machines" . }}
     {{ end }}
     {{ range .Data.M }}
-      {{ $c := $.Fmt.Led .finished .workers }}
+      {{ $c := $.Fmt.Led .finished .workers .games }}
       {{ $diff := printf "%.7s...%.7s" .args.resolved_base .args.resolved_new }}
       {{ $elo := $.Fmt.Elo .finished .results .args .results_info }}
       {{ if $elo.Info }}

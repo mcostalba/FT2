@@ -50,15 +50,17 @@ type FmtFunc struct{}
 
 // Set the led color according to the test state. Return a map to workaround
 // the single value limit of the template functions.
-func (_ FmtFunc) Led(finished bool, workers interface{}) bson.M {
+func (_ FmtFunc) Led(finished bool, workers, games interface{}) bson.M {
 
 	if finished {
-		return bson.M{"LedColor": "gray", "Workers": ""}
+		return bson.M{"LedColor": "gray", "Workers": "", "Games": ""}
 	}
 	if workers == nil {
-		return bson.M{"LedColor": "gold", "Workers": ""}
+		return bson.M{"LedColor": "gold", "Workers": "", "Games": ""}
 	}
-	return bson.M{"LedColor": "limegreen", "Workers": strconv.Itoa(workers.(int))}
+	w := strconv.Itoa(workers.(int))
+	g := strconv.Itoa(games.(int))
+	return bson.M{"LedColor": "limegreen", "Workers": w, "Games": g}
 }
 
 // Compute ELO and SPRT stats of the test

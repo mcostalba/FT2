@@ -44,7 +44,7 @@ var cache struct {
 func delta(id bson.ObjectId, ledNew, eloNew, n, o bson.M, diffList *[]diffEntry) {
 
 	var f FmtFunc
-	ledOld := f.Led(o["finished"].(bool), o["workers"])
+	ledOld := f.Led(o["finished"].(bool), o["workers"], o["games"])
 	eloOld := f.Elo(o["finished"].(bool), o["results"].(bson.M), o["args"].(bson.M), o["results_info"])
 
 	for key, vn := range ledNew {
@@ -76,7 +76,7 @@ func computeDiff(page []byte, results DBResults, sign string) (string, error) {
 	for i := range results.M {
 		n := results.M[i]
 		newId := n["_id"].(bson.ObjectId)
-		ledNew := f.Led(n["finished"].(bool), n["workers"])
+		ledNew := f.Led(n["finished"].(bool), n["workers"], n["games"])
 		eloNew := f.Elo(n["finished"].(bool), n["results"].(bson.M), n["args"].(bson.M), n["results_info"])
 		for j := range cache.pageDB.M {
 			o := cache.pageDB.M[j]
