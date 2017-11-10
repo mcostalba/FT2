@@ -57,7 +57,6 @@ function startWebSocket () {
     document.getElementById('ws-connected-icon').classList.add('text-secondary')
   }
   sock.onmessage = function (e) {
-
     console.log('Socket: received ' + e.data.length + ' bytes')
     sock.send('pong')
     const elem = document.getElementById('page-signature')

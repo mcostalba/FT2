@@ -10,6 +10,10 @@ $('#infinite-table-1').on('click', 'a[data-collapseid]', function (event) {
   $('#machines').modal()
 })
 
+$('.modal-dialog').draggable({
+  handle: '.modal-header'
+})
+
 google.charts.load('current', { 'packages': ['gauge'] })
 google.charts.setOnLoadCallback(function () {
   var label = function (label) {
@@ -71,7 +75,6 @@ google.charts.setOnLoadCallback(function () {
     const tables = document.getElementsByClassName('machines-table')
 
     for (let i = 0; i < tables.length; i++) {
-
       // Compute games-per-minute starting from the queue of game counters
       // sent by websocket updates every 'tick' seconds.
       let games = tables[i].dataset.games
