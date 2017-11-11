@@ -45,32 +45,56 @@ function startWebSocket () {
   const parser = document.createElement('a')
   parser.href = window.location.href
   const wsuri = 'wss://' + parser.hostname + '/runs_ws/'
+  var sock = {}
 
-  const sock = new WebSocket(wsuri)
+  var icon = document.getElementById('ws-connected-icon')
+  icon.onclick = function (e) {
+    if (!sock || sock.readyState === sock.CLOSED) {
+      icon.style.visibility = 'hidden'
 
-  sock.onopen = function () {
-    console.log('Socket: connected to ' + wsuri)
-    document.getElementById('ws-connected-icon').classList.remove('text-secondary')
-  }
-  sock.onclose = function (e) {
-    console.log('Socket: connection closed (' + e.code + ')')
-    document.getElementById('ws-connected-icon').classList.add('text-secondary')
-  }
-  sock.onmessage = function (e) {
-    console.log('Socket: received ' + e.data.length + ' bytes')
-    sock.send('pong')
-    const elem = document.getElementById('page-signature')
-    if (elem === null) { return }
-    const list = JSON.parse(e.data)
-    const sign = elem.dataset.signature
-    if (sign !== list.SignOld) {
-      console.log('Wrong signature, closing')
+      // Reset main view and reload first page
+      if (view.filter) { setFilter('') }
+      document.getElementById('infinite-table-0').innerHTML = ''
+      document.getElementById('infinite-table-1').innerHTML = ''
+      const elem = document.getElementById('page-signature').dataset.signature = ''
+      view.page = 0
+      setEOF(false)
+      infScroll.loadNextPage()
+
+      // (re)create a new socket (we can't reconnect)
+      sock = new WebSocket(wsuri)
+
+      sock.onopen = function () {
+        console.log('Socket: connected to ' + wsuri)
+        icon.classList.remove('text-secondary')
+        icon.style.visibility = 'visible'
+      }
+      sock.onclose = function (e) {
+        console.log('Socket: connection closed (' + e.code + ')')
+        icon.classList.add('text-secondary')
+        icon.style.visibility = 'visible'
+      }
+      sock.onmessage = function (e) {
+        console.log('Socket: received ' + e.data.length + ' bytes')
+        sock.send('pong')
+        const list = JSON.parse(e.data)
+        const elem = document.getElementById('page-signature')
+        const sign = elem.dataset.signature
+        if (sign && sign !== list.SignOld) {
+          console.log('Wrong signature, closing')
+          sock.close()
+          return
+        }
+        elem.dataset.signature = list.SignNew
+        updateRows(list.Diff)
+      }
+    } else if (sock.readyState === sock.OPEN) {
+      icon.style.visibility = 'hidden'
       sock.close()
-      return
     }
-    elem.dataset.signature = list.SignNew
-    updateRows(list.Diff)
   }
+
+  icon.click() // Load first page
 }
 
 function updateRows (diff) {
@@ -151,5 +175,4 @@ function setFilter (username) {
   }
 }
 
-infScroll.loadNextPage() // Will start first page loading
-startWebSocket()
+startWebSocket() // Will load first page
