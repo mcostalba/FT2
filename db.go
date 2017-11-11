@@ -24,7 +24,7 @@ var (
 	dbname          = os.Getenv("dbname")
 )
 
-func parseFilter(params url.Values) bson.M {
+func parseFilter(params url.Values) (bson.M, bool) {
 
 	match := bson.M{"deleted": bson.M{"$ne": 1}}
 
@@ -33,7 +33,7 @@ func parseFilter(params url.Values) bson.M {
 	if username != "" {
 		match["args.username"] = username
 	}
-	return match
+	return match, username != ""
 }
 
 func (d *DBSession) Runs(params url.Values, results *DBResults) error {
@@ -49,7 +49,7 @@ func (d *DBSession) Runs(params url.Values, results *DBResults) error {
 	noSpsaNoTasks := bson.M{"args.spsa.param_history": 0, "args.spsa.params": 0, "tasks": bson.M{"$slice": 0}}
 	stateAndTime := []string{"finished", "-last_updated", "-start_time"}
 
-	match := parseFilter(params)
+	match, filtered := parseFilter(params)
 
 	c := d.s.DB(dbname).C("runs")
 	err = c.Find(match).Select(noSpsaNoTasks).Sort(stateAndTime...).Skip(ofs).Limit(limit).All(&results.M)
@@ -103,7 +103,9 @@ func (d *DBSession) Runs(params url.Values, results *DBResults) error {
 			}
 		}
 	}
-	params.Set("machines", "load")
+	if !filtered {
+		params.Set("machines", "load")
+	}
 	return err
 }
 

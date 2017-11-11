@@ -2,8 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"html/template"
 	"labix.org/v2/mgo/bson"
@@ -183,9 +181,7 @@ func updateCachedPage() error {
 	page.Params.Set("page", "0")
 	page.Params.Set("limit", "50")
 
-	b := make([]byte, 16)
-	rand.Read(b)
-	sign := hex.EncodeToString(b)
+	sign := time.Now().String()
 	page.Params.Set("signature", sign)
 
 	err := db.Runs(page.Params, &page.Data)

@@ -1,10 +1,8 @@
 {{ define "machines" }}
         {{ range $i, $e := .Data.M }}
         {{ if eq .finished false }}
-        {{ $m := $.Fmt.Machines $e }}
-        {{ $w := $m.workers }}
+        {{ $w := $.Fmt.Machines $e }}
         {{ if $w }}
-        {{ $sum := $m.sum }}
         {{ $id := printf "coll%.7s" $e._id.Hex }}
 
         <div class="card">
@@ -13,7 +11,7 @@
            <div class="col-auto mr-auto mb-0">
             <a data-toggle="collapse" data-parent="#accordion" href="#{{$id}}" aria-expanded="true" aria-controls="{{$id}}">{{ $e.args.new_tag }}</a>
            </div>
-           <div class="col-auto small">{{ $sum.Machines }} for {{ $sum.Cores }} cores {{ printf "%.1f" $sum.Mnps }} Mnps</div>
+           <div class="col-auto small summary"></div>
           </div>
          </div>
          <div id="{{$id}}" class="collapse" role="tabpanel" aria-labelledby="heading{{$i}}">

@@ -162,15 +162,9 @@ func (_ FmtFunc) UnescapeURL(in string) template.HTML {
 }
 
 // Setup machine info page
-func (_ FmtFunc) Machines(run bson.M) bson.M {
+func (_ FmtFunc) Machines(run bson.M) []bson.M {
 
 	var workers []bson.M
-	sum := struct {
-		Machines int
-		Cores    int
-		Mnps     float64
-	}{}
-
 	tasks := run["tasks"].([]interface{})
 
 	for _, t := range tasks {
@@ -194,10 +188,7 @@ func (_ FmtFunc) Machines(run bson.M) bson.M {
 				"flag": strings.ToLower(flag),
 			}
 			workers = append(workers, m)
-			sum.Machines += 1
-			sum.Cores += cores
-			sum.Mnps += mnps
 		}
 	}
-	return bson.M{"workers": workers, "sum": sum}
+	return workers
 }

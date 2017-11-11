@@ -86,11 +86,11 @@ google.charts.setOnLoadCallback(function () {
           if (value > 0) { v.gpm += value }
         }
       }
-
+      let machines = tables[i].rows.length, cores = 0, nps = 0.0
       for (let j = 0, row; row = tables[i].rows[j]; j++) {
         v.flagSet.add(row.cells[1].innerHTML)
-        v.cores += parseInt(row.cells[3].innerHTML, 10)
-        v.nps += parseFloat(row.cells[4].innerHTML, 10)
+        cores += parseInt(row.cells[3].innerHTML, 10)
+        nps += parseFloat(row.cells[4].innerHTML, 10)
         v.machines++
         let uname = row.cells[2].innerHTML
         if (uname.includes('Linux')) {
@@ -103,6 +103,12 @@ google.charts.setOnLoadCallback(function () {
           v.os.other++
         }
       }
+      v.cores += cores
+      v.nps += nps
+      let sum = machines + ' for ' + cores + ' cores ' + nps.toFixed(1) + ' Mnps'
+      let card = tables[i]
+      while ((card = card.parentNode) && !card.classList.contains('card')) {}
+      card.getElementsByClassName('summary')[0].innerHTML = sum
     }
     chart.setValues(v)
   })
@@ -113,3 +119,23 @@ google.charts.setOnLoadCallback(function () {
     chart.setValues(v)
   }).trigger('hidden.bs.modal')
 })
+
+function updateMachines (diff) {
+  for (let i = 0; i < diff.length; i++) {
+    let games = document.getElementById('coll' + diff[i].Id.substring(0, 7))
+    games = games.getElementsByClassName('machines-table')[0]
+    let item = diff[i].Item
+    switch (item.Field) {
+      case 'Games':
+        // For each active task save the queue of the last games count ordered
+        // by most recent to oldest. It will be used to compute games per minute.
+        let s = games.dataset.games
+        if (s) { s = s.split(' ') } else { s = [] }
+        s.unshift(item.Value)
+        games.dataset.games = s.slice(0, 20).join(' ')
+        break
+      default:
+    }
+  }
+  if ($('#machines').is(':visible')) { $('#machines').trigger('shown.bs.modal') }
+}

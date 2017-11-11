@@ -56,7 +56,7 @@ function startWebSocket () {
       if (view.filter) { setFilter('') }
       document.getElementById('infinite-table-0').innerHTML = ''
       document.getElementById('infinite-table-1').innerHTML = ''
-      const elem = document.getElementById('page-signature').dataset.signature = ''
+      document.getElementById('page-signature').dataset.signature = ''
       view.page = 0
       setEOF(false)
       infScroll.loadNextPage()
@@ -81,12 +81,13 @@ function startWebSocket () {
         const elem = document.getElementById('page-signature')
         const sign = elem.dataset.signature
         if (sign && sign !== list.SignOld) {
-          console.log('Wrong signature, closing')
+          console.log('Wrong signature (' + sign + ' instead of ' + list.SignOld + ', closing')
           sock.close()
           return
         }
         elem.dataset.signature = list.SignNew
         updateRows(list.Diff)
+        updateMachines(list.Diff)
       }
     } else if (sock.readyState === sock.OPEN) {
       icon.style.visibility = 'hidden'
@@ -108,39 +109,21 @@ function updateRows (diff) {
           target.style['color'] = item.Value
           break
         case 'Workers':
-          var target = rows[k].getElementsByTagName('a')[0]
+          target = rows[k].getElementsByTagName('a')[0]
           target.innerHTML = item.Value
           break
         case 'BoxColor':
-          var target = rows[k].getElementsByClassName('card')[0]
+          target = rows[k].getElementsByClassName('card')[0]
           target.style['background-color'] = item.Value
           break
-        case 'Border':
-          var target = rows[k].getElementsByClassName('card')[0]
-          target.style['border-color'] = item.Value
-          break
         case 'Info':
-          var target = rows[k].getElementsByClassName('card-subtitle')[0]
+          target = rows[k].getElementsByClassName('card-subtitle')[0]
           target.innerHTML = item.Value
           break
-        case 'Games':
-          break
         default:
-          console.log('Unknown field ' + item.Field)
       }
     }
-    // For each active task save the queue of the last games count ordered
-    // by most recent to oldest. It will be used to compute games per minute.
-    if (item.Field === 'Games') {
-      let games = document.getElementById('coll' + diff[i].Id.substring(0, 7))
-      games = games.getElementsByClassName('machines-table')[0]
-      let s = games.dataset.games
-      if (s) { s = s.split(' ') } else { s = [] }
-      s.unshift(item.Value)
-      games.dataset.games = s.slice(0, 20).join(' ')
-    }
   }
-  if ($('#machines').is(':visible')) { $('#machines').trigger('shown.bs.modal') }
 }
 
 function setEOF (eof) {
@@ -154,7 +137,6 @@ function setFilter (username) {
     view.backup.page = view.page
     view.backup.scroll = $(window).scrollTop()
     view.backup.eof = view.eof
-    view.backup.machines = document.getElementById('accordion').innerHTML
     view.filter = '&username=' + username
     view.page = 0
     setEOF(false)
@@ -170,7 +152,6 @@ function setFilter (username) {
     document.getElementById('infinite-table-1').style.display = 'none'
     document.getElementById('infinite-table-0').style.display = 'block'
     document.getElementById('infinite-table-1').innerHTML = ''
-    document.getElementById('accordion').innerHTML = view.backup.machines
     $(window).scrollTop(view.backup.scroll)
   }
 }
