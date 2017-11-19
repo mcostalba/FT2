@@ -3,14 +3,7 @@
     {{ if eq .finished false }}
       {{ $m := $.Fmt.Machines $e }}
       {{ if $m.workers }}
-        {{ template "one_machine" $m }}
-      {{ end }}
-    {{ end }}
-  {{ end }}
-  {{ "!-- End of machines --" }}
-{{ end }}
-
-{{ define "one_machine" }}
+      {{with $m}}
         <div class="card">
          <div class="card-header container-fluid" role="tab" id="heading{{._id}}">
           <div class="row">
@@ -22,18 +15,11 @@
          </div>
          <div id="{{._id}}" class="collapse" role="tabpanel" aria-labelledby="heading{{._id}}">
           <div class="card-block">
-
            <div class="table-responsive">
             <table class="machines-table table table-striped table-sm" data-games="">
             <tbody>
-             {{ range .workers }}
-              <tr id="{{.unique_key}}" {{ if eq .Idle "true" }}class="text-muted font-weight-light"{{ end }}>
-              <td>{{ .info.username }}</td>
-              <td><div class="flag flag-{{.flag}}" style="display:inline-block"></div></td>
-              <td>{{ .info.uname }}</td>
-              <td>{{ .info.concurrency }}</td>
-              <td>{{ .Mnps }}</td>
-             </tr>
+            {{ range .workers }}
+             {{ template "one_machine" . }}
             {{ end }}
             </tbody>
             </table>
@@ -42,4 +28,19 @@
           </div>
          </div>
         </div>
+      {{end}}
+      {{end}}
+    {{ end }}
+  {{ end }}
+  {{ "!-- End of machines --" }}
+{{ end }}
+
+{{ define "one_machine" }}
+ <tr id="{{.unique_key}}" {{ if eq .Idle "true" }}class="text-muted font-weight-light"{{ end }}>
+  <td>{{ .info.username }}</td>
+  <td><div class="flag flag-{{.flag}}" style="display:inline-block"></div></td>
+  <td>{{ .info.uname }}</td>
+  <td>{{ .info.concurrency }}</td>
+  <td>{{ .Mnps }}</td>
+ </tr>
 {{ end }}

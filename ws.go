@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -29,34 +30,56 @@ type (
 	}
 )
 
-var cache struct {
-	sync.Mutex
-	clients   []*Connection
-	stop      bool
-	template  *template.Template
-	page      []byte
-	pageDiff  string
-	pageDB    DBResults
-	signature string
-}
+var (
+	cache struct {
+		sync.Mutex
+		clients   []*Connection
+		stop      bool
+		template  *template.Template
+		page      []byte
+		pageDiff  string
+		pageDB    DBResults
+		signature string
+	}
+	machineTemplate = template.Must(template.ParseFiles("templ/machines.html"))
+)
 
 func deltaMachines(id bson.ObjectId, wNew, wOld []bson.M, diffList *[]diffEntry) {
 
+	mn := make(map[string]int)
+	mo := make(map[string]int)
+
 	for i, _ := range wNew {
-		kn := wNew[i]["unique_key"].(string)
-		for j, _ := range wOld {
-			ko := wOld[j]["unique_key"].(string)
-			if kn == ko {
-				for key, v := range wNew[i] {
-					vn, isString := v.(string)
-					if vo, ok := wOld[j][key]; ok && isString {
-						if vn != vo.(string) {
-							*diffList = append(*diffList, diffEntry{id, diffItem{key, vn}, kn})
-						}
+		k := wNew[i]["unique_key"].(string)
+		mn[k] = i
+	}
+	for i, _ := range wOld {
+		k := wOld[i]["unique_key"].(string)
+		mo[k] = i
+	}
+	for k, _ := range mo {
+		if _, ok := mn[k]; !ok {
+			// Machine has been deleted, remove from list
+			*diffList = append(*diffList, diffEntry{id, diffItem{"Remove", k}, k})
+		}
+	}
+	for k, idxN := range mn {
+		if idxO, ok := mo[k]; ok {
+			// Machine in both old and new list: check for differences
+			for key, v := range wNew[idxN] {
+				vn, isString := v.(string)
+				if vo, ok := wOld[idxO][key]; ok && isString {
+					if vn != vo.(string) {
+						*diffList = append(*diffList, diffEntry{id, diffItem{key, vn}, k})
 					}
 				}
-				break
 			}
+		} else {
+			// New machine, add to list
+			var buf bytes.Buffer
+			machineTemplate.ExecuteTemplate(&buf, "one_machine", &wNew[idxN])
+			html := strings.Replace(buf.String(), "\n", "", -1)
+			*diffList = append(*diffList, diffEntry{id, diffItem{"Add", html}, k})
 		}
 	}
 }
@@ -85,7 +108,7 @@ func delta(id bson.ObjectId, ledNew, eloNew, n, o bson.M, wNew []bson.M, diffLis
 	deltaMachines(id, wNew, wOld, diffList)
 }
 
-func computeDiff(page []byte, results DBResults, sign string) (string, error) {
+func computeDiff(results DBResults, sign string) (string, error) {
 
 	type Message struct {
 		SignOld string
@@ -95,8 +118,7 @@ func computeDiff(page []byte, results DBResults, sign string) (string, error) {
 	var f FmtFunc
 	diffList := make([]diffEntry, 0, 50)
 
-	for i := range results.M {
-		n := results.M[i]
+	for _, n := range results.M {
 		newId := n["_id"].(bson.ObjectId)
 		ledNew := f.Led(n["finished"].(bool), n["workers"], n["games"])
 		eloNew := f.Elo(n["finished"].(bool), n["results"].(bson.M), n["args"].(bson.M), n["results_info"])
@@ -218,7 +240,7 @@ func updateCachedPage() error {
 	buf := bytes.NewBuffer(make([]byte, 0, 256*1024))
 	cache.template.ExecuteTemplate(buf, "layout", &page)
 
-	diff, err := computeDiff(buf.Bytes(), page.Data, sign)
+	diff, err := computeDiff(page.Data, sign)
 	if err != nil {
 		log.Printf("updateCachedTemplate: %s\n", err)
 		return err

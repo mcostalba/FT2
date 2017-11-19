@@ -122,14 +122,14 @@ google.charts.setOnLoadCallback(function () {
 
 function updateMachines (diff) {
   for (let i = 0; i < diff.length; i++) {
-    let games = document.getElementById('coll' + diff[i].Id.substring(0, 7))
-    games = games.getElementsByClassName('machines-table')[0]
+    let collapse = document.getElementById('coll' + diff[i].Id.substring(0, 7))
     let item = diff[i].Item
     let mkey = diff[i].Mkey
     switch (item.Field) {
       case 'Games':
         // For each active task save the queue of the last games count ordered
         // by most recent to oldest. It will be used to compute games per minute.
+        let games = collapse.getElementsByClassName('machines-table')[0]
         let s = games.dataset.games
         if (s) { s = s.split(' ') } else { s = [] }
         s.unshift(item.Value)
@@ -139,10 +139,18 @@ function updateMachines (diff) {
         let muted = 'text-muted'
         let light = 'font-weight-light'
         let cl = document.getElementById(mkey).classList
-        if (item.Value === "true") { cl.add(muted, light) } else { cl.remove(muted, light) }
+        if (item.Value === 'true') { cl.add(muted, light) } else { cl.remove(muted, light) }
         break
       case 'Mnps':
         document.getElementById(mkey).children[4].innerText = item.Value
+        break
+      case 'Remove':
+        let elem = document.getElementById(mkey)
+        elem.parentNode.removeChild(elem)
+        break
+      case 'Add':
+        let tbody = collapse.getElementsByTagName('tbody')[0]
+        tbody.insertAdjacentHTML('beforeend', item.Value)
         break
       default:
     }
