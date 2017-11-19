@@ -25,6 +25,7 @@ type (
 	diffEntry struct {
 		Id   bson.ObjectId
 		Item diffItem
+		Mkey string
 	}
 )
 
@@ -39,26 +40,49 @@ var cache struct {
 	signature string
 }
 
-func delta(id bson.ObjectId, ledNew, eloNew, n, o bson.M, diffList *[]diffEntry) {
+func deltaMachines(id bson.ObjectId, wNew, wOld []bson.M, diffList *[]diffEntry) {
+
+	for i, _ := range wNew {
+		kn := wNew[i]["unique_key"].(string)
+		for j, _ := range wOld {
+			ko := wOld[j]["unique_key"].(string)
+			if kn == ko {
+				for key, v := range wNew[i] {
+					vn, isString := v.(string)
+					if vo, ok := wOld[j][key]; ok && isString {
+						if vn != vo.(string) {
+							*diffList = append(*diffList, diffEntry{id, diffItem{key, vn}, kn})
+						}
+					}
+				}
+				break
+			}
+		}
+	}
+}
+
+func delta(id bson.ObjectId, ledNew, eloNew, n, o bson.M, wNew []bson.M, diffList *[]diffEntry) {
 
 	var f FmtFunc
 	ledOld := f.Led(o["finished"].(bool), o["workers"], o["games"])
 	eloOld := f.Elo(o["finished"].(bool), o["results"].(bson.M), o["args"].(bson.M), o["results_info"])
+	wOld := f.Machines(o)["workers"].([]bson.M)
 
 	for key, vn := range ledNew {
 		if vo, ok := ledOld[key]; ok {
 			if vn.(string) != vo.(string) {
-				*diffList = append(*diffList, diffEntry{id, diffItem{key, vn.(string)}})
+				*diffList = append(*diffList, diffEntry{id, diffItem{key, vn.(string)}, ""})
 			}
 		}
 	}
 	for key, vn := range eloNew {
 		if vo, ok := eloOld[key]; ok {
 			if vn.(string) != vo.(string) {
-				*diffList = append(*diffList, diffEntry{id, diffItem{key, vn.(string)}})
+				*diffList = append(*diffList, diffEntry{id, diffItem{key, vn.(string)}, ""})
 			}
 		}
 	}
+	deltaMachines(id, wNew, wOld, diffList)
 }
 
 func computeDiff(page []byte, results DBResults, sign string) (string, error) {
@@ -76,11 +100,12 @@ func computeDiff(page []byte, results DBResults, sign string) (string, error) {
 		newId := n["_id"].(bson.ObjectId)
 		ledNew := f.Led(n["finished"].(bool), n["workers"], n["games"])
 		eloNew := f.Elo(n["finished"].(bool), n["results"].(bson.M), n["args"].(bson.M), n["results_info"])
+		wNew := f.Machines(n)["workers"].([]bson.M)
 		for j := range cache.pageDB.M {
 			o := cache.pageDB.M[j]
 			oldId := o["_id"].(bson.ObjectId)
 			if oldId == newId {
-				delta(newId, ledNew, eloNew, n, o, &diffList)
+				delta(newId, ledNew, eloNew, n, o, wNew, &diffList)
 			}
 		}
 	}

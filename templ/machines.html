@@ -1,32 +1,38 @@
 {{ define "machines" }}
-        {{ range $i, $e := .Data.M }}
-        {{ if eq .finished false }}
-        {{ $w := $.Fmt.Machines $e }}
-        {{ if $w }}
-        {{ $id := printf "coll%.7s" $e._id.Hex }}
+  {{ range $e := .Data.M }}
+    {{ if eq .finished false }}
+      {{ $m := $.Fmt.Machines $e }}
+      {{ if $m.workers }}
+        {{ template "one_machine" $m }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+  {{ "!-- End of machines --" }}
+{{ end }}
 
+{{ define "one_machine" }}
         <div class="card">
-         <div class="card-header container-fluid" role="tab" id="heading{{$i}}">
+         <div class="card-header container-fluid" role="tab" id="heading{{._id}}">
           <div class="row">
            <div class="col-auto mr-auto mb-0">
-            <a data-toggle="collapse" data-parent="#accordion" href="#{{$id}}" aria-expanded="true" aria-controls="{{$id}}">{{ $e.args.new_tag }}</a>
+            <a data-toggle="collapse" data-parent="#accordion" href="#{{._id}}" aria-expanded="true" aria-controls="{{._id}}">{{ .new_tag }}</a>
            </div>
            <div class="col-auto small summary"></div>
           </div>
          </div>
-         <div id="{{$id}}" class="collapse" role="tabpanel" aria-labelledby="heading{{$i}}">
+         <div id="{{._id}}" class="collapse" role="tabpanel" aria-labelledby="heading{{._id}}">
           <div class="card-block">
 
            <div class="table-responsive">
             <table class="machines-table table table-striped table-sm" data-games="">
             <tbody>
-             {{ range $w }}
-              <tr {{ if .idle }}class="text-muted font-weight-light"{{ end }}>
+             {{ range .workers }}
+              <tr id="{{.unique_key}}" {{ if eq .Idle "true" }}class="text-muted font-weight-light"{{ end }}>
               <td>{{ .info.username }}</td>
               <td><div class="flag flag-{{.flag}}" style="display:inline-block"></div></td>
               <td>{{ .info.uname }}</td>
               <td>{{ .info.concurrency }}</td>
-              <td>{{ printf "%.1f" .mnps }}</td>
+              <td>{{ .Mnps }}</td>
              </tr>
             {{ end }}
             </tbody>
@@ -36,10 +42,4 @@
           </div>
          </div>
         </div>
-
-        {{ end }}
-        {{ end }}
-        {{ end }}
-
-{{ "!-- End of machines --" }}
 {{ end }}

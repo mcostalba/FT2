@@ -161,16 +161,19 @@ func (_ FmtFunc) UnescapeURL(in string) template.HTML {
 	return template.HTML(out)
 }
 
-// Setup machine info page
-func (_ FmtFunc) Machines(run bson.M) []bson.M {
+// Setup machines list associated with the given (active) run
+func (_ FmtFunc) Machines(run bson.M) bson.M {
 
 	var workers []bson.M
 	tasks := run["tasks"].([]interface{})
+	_id := fmt.Sprintf("coll%.7s", run["_id"].(bson.ObjectId).Hex())
+	new_tag := run["args"].(bson.M)["new_tag"]
 
 	for _, t := range tasks {
 		task := t.(bson.M)
 		if task["active"].(bool) {
 			info := task["worker_info"].(bson.M)
+			unique_key := info["unique_key"].(string)
 			flag, _ := info["country_code"].(string)
 			last_updated, _ := task["last_updated"].(time.Time)
 			cores := info["concurrency"].(int)
@@ -182,13 +185,14 @@ func (_ FmtFunc) Machines(run bson.M) []bson.M {
 				idle = true
 			}
 			m := bson.M{
-				"info": info,
-				"idle": idle,
-				"mnps": mnps,
-				"flag": strings.ToLower(flag),
+				"unique_key": unique_key,
+				"info":       info,
+				"Idle":       strconv.FormatBool(idle),  // Exported to JSON
+				"Mnps":       fmt.Sprintf("%.1f", mnps), // Exported to JSON
+				"flag":       strings.ToLower(flag),
 			}
 			workers = append(workers, m)
 		}
 	}
-	return workers
+	return bson.M{"_id": _id, "new_tag": new_tag, "workers": workers}
 }

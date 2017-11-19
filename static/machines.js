@@ -125,6 +125,7 @@ function updateMachines (diff) {
     let games = document.getElementById('coll' + diff[i].Id.substring(0, 7))
     games = games.getElementsByClassName('machines-table')[0]
     let item = diff[i].Item
+    let mkey = diff[i].Mkey
     switch (item.Field) {
       case 'Games':
         // For each active task save the queue of the last games count ordered
@@ -133,6 +134,15 @@ function updateMachines (diff) {
         if (s) { s = s.split(' ') } else { s = [] }
         s.unshift(item.Value)
         games.dataset.games = s.slice(0, 20).join(' ')
+        break
+      case 'Idle':
+        let muted = 'text-muted'
+        let light = 'font-weight-light'
+        let cl = document.getElementById(mkey).classList
+        if (item.Value === "true") { cl.add(muted, light) } else { cl.remove(muted, light) }
+        break
+      case 'Mnps':
+        document.getElementById(mkey).children[4].innerText = item.Value
         break
       default:
     }
