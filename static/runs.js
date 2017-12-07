@@ -10,7 +10,7 @@ $('#infinite-table-1').on('click', 'a[data-filter]', function (event) {
 })
 
 $('#filter-icon').on('click', function (event) {
-  setFilter('')
+  if (view.filter) { setFilter('') } else $('#filterView').modal()
 })
 
 var infScroll = new InfiniteScroll('#infinite-scroll-container', {
