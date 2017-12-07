@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 )
 
 type Page struct {
@@ -105,5 +106,6 @@ func main() {
 
 	mux.HandleFunc("/", handleRuns)
 	mux.HandleFunc("/get_runs/", handleGetRuns)
-	http.ListenAndServe(":8080", SessionManager.Use(mux))
+	port := os.Getenv("port")
+	http.ListenAndServe(":"+port, SessionManager.Use(mux))
 }
